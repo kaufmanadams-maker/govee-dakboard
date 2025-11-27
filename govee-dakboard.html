@@ -245,12 +245,12 @@
       }
       setStatus("Loading devices...");
       try {
-        const data = await fetchJson(`${BASE_URL}/user/devices`, {
-          method: "GET",
-          headers: {
-            "Govee-API-Key": key
-          }
-        });
+        c// Govee returns { code, message, data: [ ...devices ] }
+        const devices = Array.isArray(data?.data)
+          ? data.data
+          : (data?.data?.devices || []);
+          console.log("Govee /user/devices response:", data, "parsed devices:", devices);
+
         const devices = (data && data.data && data.data.devices) || [];
         if (!devices.length) {
           setStatus("No devices returned from API.", false);
