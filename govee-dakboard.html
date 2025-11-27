@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Govee Lights Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color-scheme: dark;
+    }
+    body {
+      margin: 0;
+      padding: 0.5rem;
+      background: #111;
+      color: #f5f5f5;
+    }
+    .card {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 1rem;
+      border-radius: 12px;
+      background: #1c1c1c;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    h1 {
+      font-size: 1.2rem;
+      margin: 0 0 0.75rem;
+      text-align: center;
+    }
+    h2 {
+      font-size: 0.95rem;
+      margin: 0.75rem 0 0.25rem;
+    }
+    label {
+      font-size: 0.8rem;
+      display: block;
+      margin: 0.25rem 0;
+    }
+    input, select, button {
+      font-size: 0.9rem;
+    }
+    input[type="password"],
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #111;
+      color: #f5f5f5;
+      box-sizing: border-box;
+    }
+    input[type="range"] {
+      width: 100%;
+    }
+    button {
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid #555;
+      background: #2a2a2a;
+      color: #f5f5f5;
+      cursor: pointer;
+      margin: 0.25rem 0.15rem;
+      white-space: nowrap;
+    }
+    button.primary {
+      background: #0d6efd;
+      border-color: #0d6efd;
+    }
+    button.danger {
+      background: #b02020;
+      border-color: #b02020;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 0.25rem 0;
+      gap: 0.25rem;
+    }
+    .row > * {
+      flex: 1;
+      min-width: 0;
+    }
+    .row.buttons > * {
+      flex: 0 0 auto;
+    }
+    .small {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+    #status {
+      font-size: 0.75rem;
+      margin-top: 0.3rem;
+      min-height: 1.1rem;
+    }
+    #status.ok {
+      color: #7bd88a;
+    }
+    #status.err {
+      color: #ff6b6b;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Govee Lights</h1>
+
+    <section id="configSection">
+      <h2>Config</h2>
+      <label>
+        Govee API Key
+        <input type="password" id="apiKeyInput" autocomplete="off" placeholder="Paste your Govee API key">
+      </label>
+      <div class="row buttons">
+        <button id="saveConfigBtn" class="primary">Save</button>
+        <button id="loadDevicesBtn">Load devices</button>
+        <button id="clearConfigBtn">Clear</button>
+      </div>
+      <div class="small">
+        Key and selected device are stored locally in this browser only.
+      </div>
+
+      <div id="devicesSection" class="hidden">
+        <h2>Device</h2>
+        <label>
+          Select device
+          <select id="deviceSelect"></select>
+        </label>
+      </div>
+
+      <div id="status"></div>
+    </section>
+
+    <section id="controlsSection" class="hidden">
+      <h2>Controls</h2>
+      <div class="row buttons">
+        <button id="onBtn" class="primary">On</button>
+        <button id="offBtn" class="danger">Off</button>
+        <button id="refreshStateBtn">Refresh state</button>
+      </div>
+
+      <div class="row">
+        <label>
+          Brightness
+          <input type="range" id="brightnessInput" min="1" max="100" value="50">
+        </label>
+        <div style="flex:0 0 auto;font-size:0.8rem;">
+          <span id="brightnessValue">50</span>%
+        </div>
+      </div>
+      <div class="row buttons">
+        <button id="applyBrightnessBtn">Set brightness</button>
+      </div>
+
+      <div class="row">
+        <label>
+          Color
+          <input type="color" id="colorInput" value="#ffffff">
+        </label>
+      </div>
+      <div class="row buttons">
+        <button id="applyColorBtn">Set color</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const BASE_URL = "https://openapi.api.govee.com/router/api/v1";
+
+    const apiKeyInput = document.getElementById("apiKeyInput");
+    const saveConfigBtn = document.getElementById("saveConfigBtn");
+    const loadDevicesBtn = document.getElementById("loadDevicesBtn");
+    const clearConfigBtn = document.getElementById("clearConfigBtn");
+    const statusEl = document.getElementById("status");
+    const devicesSection = document.getElementById("devicesSection");
+    const controlsSection = document.getElementById("controlsSection");
+    const deviceSelect = document.getElementById("deviceSelect");
+
+    const onBtn = document.getElementById("onBtn");
+    const offBtn = document.getElementById("offBtn");
+    const refreshStateBtn = document.getElementById("refreshStateBtn");
+    const brightnessInput = document.getElementById("brightnessInput");
+    const brightnessValue = document.getElementById("brightnessValue");
+    const applyBrightnessBtn = document.getElementById("applyBrightnessBtn");
+    const colorInput = document.getElementById("colorInput");
+    const applyColorBtn = document.getElementById("applyColorBtn");
+
+    function setStatus(msg, ok = false) {
+      statusEl.textContent = msg || "";
+      statusEl.classList.remove("ok", "err");
+      if (!msg) return;
+      statusEl.classList.add(ok ? "ok" : "err");
+    }
+
+    function getApiKey() {
+      return localStorage.getItem("goveeApiKey") || "";
+    }
+
+    function getSelectedDevice() {
+      const value = deviceSelect.value;
+      if (!value) return null;
+      const [device, sku] = value.split("|");
+      return { device, sku };
+    }
+
+    function saveConfig() {
+      const key = apiKeyInput.value.trim();
+      if (!key) {
+        setStatus("API key is required.", false);
+        return;
+      }
+      localStorage.setItem("goveeApiKey", key);
+      setStatus("API key saved.", true);
+    }
+
+    async function fetchJson(url, options = {}) {
+      const res = await fetch(url, options);
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (e) {
+        // ignore JSON parse issues, will handle via status
+      }
+      if (!res.ok) {
+        const msg = (data && (data.msg || data.message)) || res.statusText || "Error";
+        throw new Error(msg);
+      }
+      return data;
+    }
+
+    async function loadDevices() {
+      const key = getApiKey();
+      if (!key) {
+        setStatus("Save your API key first.", false);
+        return;
+      }
+      setStatus("Loading devices...");
+      try {
+        const data = await fetchJson(`${BASE_URL}/user/devices`, {
+          method: "GET",
+          headers: {
+            "Govee-API-Key": key
+          }
+        });
+        const devices = (data && data.data && data.data.devices) || [];
+        if (!devices.length) {
+          setStatus("No devices returned from API.", false);
+          return;
+        }
+
+        // Populate dropdown
+        deviceSelect.innerHTML = "";
+        devices.forEach(d => {
+          const opt = document.createElement("option");
+          const name = d.deviceName || d.sku || d.device;
+          opt.textContent = `${name} (${d.sku})`;
+          opt.value = `${d.device}|${d.sku}`;
+          deviceSelect.appendChild(opt);
+        });
+
+        // Restore previous selection if present
+        const savedDevice = localStorage.getItem("goveeDevice");
+        const savedSku = localStorage.getItem("goveeSku");
+        if (savedDevice && savedSku) {
+          const combined = `${savedDevice}|${savedSku}`;
+          const match = Array.from(deviceSelect.options).find(o => o.value === combined);
+          if (match) {
+            deviceSelect.value = combined;
+          }
+        }
+
+        devicesSection.classList.remove("hidden");
+        controlsSection.classList.remove("hidden");
+
+        const selected = getSelectedDevice();
+        if (selected) {
+          localStorage.setItem("goveeDevice", selected.device);
+          localStorage.setItem("goveeSku", selected.sku);
+        }
+
+        setStatus(`Loaded ${devices.length} device(s).`, true);
+      } catch (err) {
+        setStatus(`Device load failed: ${err.message}`, false);
+      }
+    }
+
+    async function sendCapability(capability) {
+      const key = getApiKey();
+      const target = getSelectedDevice();
+      if (!key || !target) {
+        setStatus("API key and device must be set.", false);
+        return;
+      }
+      setStatus("Sending command...");
+      try {
+        const body = {
+          requestId: String(Date.now()),
+          payload: {
+            sku: target.sku,
+            device: target.device,
+            capability
+          }
+        };
+        const data = await fetchJson(`${BASE_URL}/device/control`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Govee-API-Key": key
+          },
+          body: JSON.stringify(body)
+        });
+        const msg = data.msg || data.message || "Success";
+        setStatus(`Command OK: ${msg}`, true);
+      } catch (err) {
+        setStatus(`Command failed: ${err.message}`, false);
+      }
+    }
+
+    async function refreshState() {
+      const key = getApiKey();
+      const target = getSelectedDevice();
+      if (!key || !target) {
+        setStatus("API key and device must be set.", false);
+        return;
+      }
+      setStatus("Refreshing state...");
+      try {
+        const body = {
+          requestId: String(Date.now()),
+          payload: {
+            sku: target.sku,
+            device: target.device
+          }
+        };
+        const data = await fetchJson(`${BASE_URL}/device/state`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Govee-API-Key": key
+          },
+          body: JSON.stringify(body)
+        });
+
+        const caps = (data && data.payload && data.payload.capabilities) || [];
+        const brightnessCap = caps.find(
+          c => c.type === "devices.capabilities.range" && c.instance === "brightness"
+        );
+        if (brightnessCap && brightnessCap.state && typeof brightnessCap.state.value === "number") {
+          const v = brightnessCap.state.value;
+          brightnessInput.value = v;
+          brightnessValue.textContent = v;
+        }
+        const onOffCap = caps.find(
+          c => c.type === "devices.capabilities.on_off" && c.instance === "powerSwitch"
+        );
+        if (onOffCap && onOffCap.state) {
+          const on = !!onOffCap.state.value;
+          setStatus(on ? "State: ON" : "State: OFF", true);
+        } else {
+          setStatus("State refreshed.", true);
+        }
+      } catch (err) {
+        setStatus(`State refresh failed: ${err.message}`, false);
+      }
+    }
+
+    function hexToRgb(hex) {
+      const h = hex.replace("#", "");
+      if (h.length !== 6) return { r: 255, g: 255, b: 255 };
+      const r = parseInt(h.slice(0, 2), 16);
+      const g = parseInt(h.slice(2, 4), 16);
+      const b = parseInt(h.slice(4, 6), 16);
+      return { r, g, b };
+    }
+
+    function rgbToPackedInt(r, g, b) {
+      return ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
+    }
+
+    // Event wiring
+    saveConfigBtn.addEventListener("click", saveConfig);
+    clearConfigBtn.addEventListener("click", () => {
+      localStorage.removeItem("goveeApiKey");
+      localStorage.removeItem("goveeDevice");
+      localStorage.removeItem("goveeSku");
+      apiKeyInput.value = "";
+      deviceSelect.innerHTML = "";
+      devicesSection.classList.add("hidden");
+      controlsSection.classList.add("hidden");
+      setStatus("Config cleared.", true);
+    });
+
+    loadDevicesBtn.addEventListener("click", loadDevices);
+
+    deviceSelect.addEventListener("change", () => {
+      const selected = getSelectedDevice();
+      if (selected) {
+        localStorage.setItem("goveeDevice", selected.device);
+        localStorage.setItem("goveeSku", selected.sku);
+      }
+    });
+
+    onBtn.addEventListener("click", () => {
+      sendCapability({
+        type: "devices.capabilities.on_off",
+        instance: "powerSwitch",
+        value: 1
+      });
+    });
+
+    offBtn.addEventListener("click", () => {
+      sendCapability({
+        type: "devices.capabilities.on_off",
+        instance: "powerSwitch",
+        value: 0
+      });
+    });
+
+    refreshStateBtn.addEventListener("click", refreshState);
+
+    brightnessInput.addEventListener("input", () => {
+      brightnessValue.textContent = brightnessInput.value;
+    });
+
+    applyBrightnessBtn.addEventListener("click", () => {
+      const value = parseInt(brightnessInput.value, 10) || 1;
+      sendCapability({
+        type: "devices.capabilities.range",
+        instance: "brightness",
+        value: value
+      });
+    });
+
+    applyColorBtn.addEventListener("click", () => {
+      const { r, g, b } = hexToRgb(colorInput.value);
+      const packed = rgbToPackedInt(r, g, b);
+      sendCapability({
+        type: "devices.capabilities.color_setting",
+        instance: "colorRgb",
+        value: packed
+      });
+    });
+
+    // Initial load: restore key and try to show controls if device already saved
+    (function init() {
+      const storedKey = getApiKey();
+      if (storedKey) {
+        apiKeyInput.value = storedKey;
+        // Do not auto load devices to avoid hammering API, user can tap "Load devices"
+      }
+      const storedDevice = localStorage.getItem("goveeDevice");
+      const storedSku = localStorage.getItem("goveeSku");
+      if (storedKey && storedDevice && storedSku) {
+        // User still must press "Load devices" to populate dropdown
+        setStatus("Config found. Tap \"Load devices\".", true);
+      }
+    })();
+  </script>
+</body>
+</html>
