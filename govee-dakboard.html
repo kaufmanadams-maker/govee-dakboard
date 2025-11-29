@@ -2,294 +2,378 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Govee Lights Control</title>
+  <title>Govee Groups – DakBoard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
-      color-scheme: dark light;
-      --bg: #111827;
-      --panel: #1f2937;
-      --text: #f9fafb;
-      --muted: #9ca3af;
-      --accent: #3b82f6;
-      --accent-soft: rgba(59, 130, 246, 0.25);
-      --danger: #f97373;
-      --border: #374151;
-      --radius-lg: 12px;
-      --radius-sm: 6px;
-      --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.45);
-      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-                   "Segoe UI", sans-serif;
+      color-scheme: dark;
+      --bg: #050816;
+      --panel: #111827;
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.15);
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --error: #f97373;
+      --border-subtle: #1f2937;
+      --radius-lg: 18px;
+      --radius-pill: 999px;
     }
 
     * {
       box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
     }
 
     body {
       margin: 0;
-      min-height: 100vh;
-      font-family: var(--font-main);
-      background: radial-gradient(circle at top left, #1f2933 0, #030712 55%, #000 100%);
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 12px;
+      padding: 16px;
+      background: radial-gradient(circle at top, #111827 0, #020617 55%);
+      color: var(--text-main);
     }
 
-    .widget {
-      width: 100%;
-      max-width: 420px;
-      background: linear-gradient(145deg, #020617, #030712);
-      border-radius: 20px;
-      box-shadow: var(--shadow-soft);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      padding: 16px 16px 14px;
+    .card {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 18px 18px 14px;
+      background: linear-gradient(135deg, #020617, #020617 40%, #111827);
+      border-radius: 24px;
+      box-shadow:
+        0 26px 60px rgba(15, 23, 42, 0.95),
+        0 0 0 1px rgba(148, 163, 184, 0.08);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      position: relative;
+      overflow: hidden;
     }
 
-    .widget-header {
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      opacity: 0.16;
+      background:
+        radial-gradient(circle at 0 0, rgba(59, 130, 246, 0.65), transparent 55%),
+        radial-gradient(circle at 100% 0, rgba(236, 72, 153, 0.7), transparent 55%),
+        radial-gradient(circle at 0 100%, rgba(45, 212, 191, 0.6), transparent 55%);
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    h1 {
+      font-size: 1.05rem;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: #e5e7eb;
+      margin: 0 0 4px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
       gap: 8px;
     }
 
-    .widget-title {
-      font-size: 16px;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .widget-title-icon {
-      width: 18px;
-      height: 18px;
-      border-radius: 6px;
-      background: conic-gradient(
-        from 180deg,
-        #22d3ee,
-        #3b82f6,
-        #a855f7,
-        #f97316,
-        #22c55e,
-        #22d3ee
-      );
-      box-shadow: 0 0 12px rgba(59, 130, 246, 0.8);
-    }
-
-    .status-chip {
-      font-size: 11px;
+    .badge-api {
+      margin-left: auto;
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--text-muted);
       padding: 2px 8px;
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      color: var(--muted);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background-color: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(6px);
       white-space: nowrap;
-      max-width: 55%;
+    }
+
+    .subtitle {
+      margin: 0 0 12px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    #statusText {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      padding: 4px 8px;
+      border-radius: 999px;
+      background-color: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      white-space: nowrap;
+      max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background-color: rgba(15, 23, 42, 0.8);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
     .section {
-      border-radius: 14px;
-      border: 1px solid rgba(31, 41, 55, 0.9);
-      background: radial-gradient(circle at top left, #0b1220 0, #020617 70%);
-      padding: 10px 10px 8px;
-      margin-bottom: 9px;
+      margin-top: 8px;
+      padding: 10px 10px 9px;
+      border-radius: var(--radius-lg);
+      background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.98), #020617);
+      border: 1px solid rgba(31, 41, 55, 0.85);
     }
 
     .section-header {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: var(--muted);
-      margin-bottom: 6px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      margin-bottom: 6px;
     }
 
-    .section-header span:last-child {
-      font-size: 10px;
-      opacity: 0.75;
+    .section-title {
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #9ca3af;
     }
 
     label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
       display: block;
-      font-size: 11px;
-      color: var(--muted);
-      margin-bottom: 3px;
+      margin-bottom: 4px;
     }
 
-    input[type="text"],
-    select {
+    input[type="password"] {
       width: 100%;
-      padding: 6px 8px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: rgba(15, 23, 42, 0.95);
-      color: var(--text);
-      font-size: 12px;
+      padding: 6px 9px;
+      border-radius: 10px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background-color: rgba(15, 23, 42, 0.96);
+      color: var(--text-main);
+      font-size: 0.78rem;
       outline: none;
-      transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
     }
 
-    input[type="text"]:focus,
-    select:focus {
+    input[type="password"]:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent-soft);
-      background: #020617;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.7);
     }
 
-    .row {
+    .btn-row {
       display: flex;
-      gap: 8px;
-      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      flex-wrap: wrap;
     }
 
-    .row > * {
-      flex: 1;
-    }
-
-    .btn {
+    button {
       border: none;
-      border-radius: var(--radius-sm);
-      padding: 6px 10px;
-      font-size: 12px;
+      border-radius: var(--radius-pill);
+      padding: 6px 12px;
+      font-size: 0.72rem;
       font-weight: 500;
       cursor: pointer;
-      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
-      color: white;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.45);
-      transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
+      background: rgba(15, 23, 42, 0.98);
+      color: var(--text-main);
+      border: 1px solid rgba(55, 65, 81, 0.95);
+      transition:
+        background 120ms ease-out,
+        transform 80ms ease-out,
+        box-shadow 120ms ease-out,
+        border-color 120ms ease-out;
       white-space: nowrap;
     }
 
-    .btn:active {
-      transform: translateY(1px);
-      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.7);
+    button.primary {
+      background: radial-gradient(circle at top left, #3b82f6, #1d4ed8);
+      border-color: rgba(96, 165, 250, 0.95);
+      box-shadow:
+        0 0 0 1px rgba(59, 130, 246, 0.55),
+        0 14px 30px rgba(37, 99, 235, 0.6);
     }
 
-    .btn-secondary {
-      background: rgba(15, 23, 42, 0.95);
-      color: var(--muted);
+    button.primary:hover {
+      filter: brightness(1.06);
+      transform: translateY(-0.5px);
+    }
+
+    button.secondary {
+      background: rgba(15, 23, 42, 0.96);
+    }
+
+    button.secondary:hover {
+      background: rgba(30, 64, 175, 0.45);
+      border-color: rgba(96, 165, 250, 0.7);
+    }
+
+    button.danger {
+      background: rgba(127, 29, 29, 0.9);
+      border-color: rgba(248, 113, 113, 0.9);
+      color: #fee2e2;
+    }
+
+    button.danger:hover {
+      background: rgba(185, 28, 28, 0.96);
+    }
+
+    button:active {
+      transform: translateY(0.4px) scale(0.99);
       box-shadow: none;
-      border: 1px solid rgba(55, 65, 81, 0.9);
     }
 
-    .btn-danger {
-      background: radial-gradient(circle at top left, #f97373, #b91c1c);
-      box-shadow: 0 4px 10px rgba(220, 38, 38, 0.5);
+    button:disabled {
+      opacity: 0.45;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
     }
 
-    .btn-ghost {
-      background: transparent;
+    .groups-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .group-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 7px;
       border-radius: 999px;
-      padding-inline: 10px;
-      font-size: 11px;
-      border: 1px dashed rgba(75, 85, 99, 0.9);
-      color: var(--muted);
-      box-shadow: none;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(55, 65, 81, 0.95);
+      cursor: pointer;
     }
 
-    .btn-small {
-      padding: 4px 8px;
-      font-size: 11px;
-      border-radius: 999px;
-      box-shadow: none;
+    .group-row.active {
+      border-color: rgba(96, 165, 250, 0.95);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.7);
+      background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.25), #020617);
     }
 
-    .btn-block {
-      width: 100%;
+    .group-name {
+      flex: 1;
+      font-size: 0.78rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .controls-row {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 4px;
+    .group-row button {
+      padding: 4px 10px;
+      font-size: 0.7rem;
     }
 
-    .controls-row .btn {
-      padding-block: 7px;
+    .controls-section {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(31, 41, 55, 0.9);
+    }
+
+    .controls-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .controls-header span {
+      font-size: 0.7rem;
+      color: var(--text-muted);
     }
 
     .slider-row {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-top: 5px;
+      margin-top: 6px;
+    }
+
+    .slider-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      width: 60px;
+    }
+
+    .slider-value {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      width: 40px;
+      text-align: right;
     }
 
     input[type="range"] {
       flex: 1;
-      appearance: none;
-      height: 4px;
-      border-radius: 999px;
-      background: rgba(55, 65, 81, 0.9);
-      outline: none;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: var(--accent);
-      border: 2px solid #e5e7eb;
-      box-shadow: 0 0 0 4px var(--accent-soft);
-      cursor: pointer;
-      margin-top: -5px;
-    }
-
-    input[type="range"]::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: var(--accent);
-      border: 2px solid #e5e7eb;
-      box-shadow: 0 0 0 4px var(--accent-soft);
-      cursor: pointer;
-    }
-
-    .slider-value {
-      font-size: 11px;
-      color: var(--muted);
-      width: 36px;
-      text-align: right;
+      accent-color: #60a5fa;
     }
 
     .color-row {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 5px;
+      gap: 10px;
+      margin-top: 6px;
     }
 
     input[type="color"] {
-      width: 32px;
+      width: 38px;
       height: 22px;
       border-radius: 999px;
-      border: 1px solid rgba(55, 65, 81, 0.9);
-      background: #020617;
+      border: 1px solid rgba(148, 163, 184, 0.8);
       padding: 0;
+      background: transparent;
       cursor: pointer;
     }
 
+    .scene-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      align-items: center;
+    }
+
+    .scene-row select {
+      flex: 1;
+      padding: 6px 9px;
+      border-radius: 10px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background-color: rgba(15, 23, 42, 0.96);
+      color: var(--text-main);
+      font-size: 0.78rem;
+      outline: none;
+    }
+
+    .scene-row select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.7);
+    }
+
     .footer {
+      margin-top: 8px;
+      font-size: 0.65rem;
+      color: var(--text-muted);
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-top: 6px;
-      font-size: 10px;
-      color: var(--muted);
+      gap: 8px;
       opacity: 0.8;
     }
 
@@ -297,516 +381,845 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      max-width: 65%;
-    }
-
-    .footer small {
-      font-size: 9px;
-      opacity: 0.85;
     }
   </style>
 </head>
 <body>
-  <div class="widget">
-    <div class="widget-header">
-      <div class="widget-title">
-        <div class="widget-title-icon"></div>
-        <span>Govee Lights</span>
-      </div>
-      <div id="statusText" class="status-chip">Ready</div>
-    </div>
-
-    <!-- API key / config -->
-    <div class="section">
-      <div class="section-header">
-        <span>Configuration</span>
-        <span>Stored per device</span>
-      </div>
-      <label for="apiKeyInput">Govee API Key</label>
-      <div class="row" style="margin-bottom: 6px;">
-        <input type="text" id="apiKeyInput" placeholder="Paste your Govee-API-Key" />
-      </div>
-      <div class="row" style="justify-content: space-between;">
-        <button id="saveConfigBtn" class="btn btn-small" type="button">
-          Save
-        </button>
-        <button id="loadDevicesBtn" class="btn btn-secondary btn-small" type="button">
-          Load devices
-        </button>
-        <button id="clearConfigBtn" class="btn btn-ghost btn-small" type="button">
-          Clear config
-        </button>
-      </div>
-    </div>
-
-    <!-- Device selection -->
-    <div class="section">
-      <div class="section-header">
-        <span>Device</span>
-        <span>Select light to control</span>
-      </div>
-      <label for="deviceSelect">Govee device</label>
-      <select id="deviceSelect">
-        <option value="">No devices loaded</option>
-      </select>
-    </div>
-
-    <!-- Power / brightness / color -->
-    <div class="section">
-      <div class="section-header">
-        <span>Controls</span>
-        <span>Power · Brightness · Color</span>
-      </div>
-
-      <div class="controls-row">
-        <button id="powerOnBtn" class="btn" type="button">
-          On
-        </button>
-        <button id="powerOffBtn" class="btn btn-secondary" type="button">
-          Off
-        </button>
-        <button id="refreshStateBtn" class="btn btn-secondary" type="button">
-          Refresh
-        </button>
-      </div>
-
-      <div style="margin-top: 8px;">
-        <label for="brightnessRange">Brightness</label>
-        <div class="slider-row">
-          <input
-            type="range"
-            id="brightnessRange"
-            min="1"
-            max="100"
-            value="50"
-          />
-          <div id="brightnessValue" class="slider-value">50%</div>
+  <div class="card">
+    <div class="card-inner">
+      <div class="header-row">
+        <div>
+          <h1>Govee Groups</h1>
+          <p class="subtitle">SameModeGroup · Quick control</p>
         </div>
-        <div style="margin-top: 4px;">
-          <button id="setBrightnessBtn" class="btn btn-block btn-small" type="button">
-            Set brightness
-          </button>
+        <div class="badge-api">Cloud API v1</div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Configuration</div>
+          <div class="pill" id="groupsSummary">No groups loaded</div>
+        </div>
+        <label for="apiKeyInput">Govee API Key</label>
+        <input id="apiKeyInput" type="password" autocomplete="off" />
+        <div class="btn-row">
+          <button id="saveKeyBtn" class="primary">Save</button>
+          <button id="reloadGroupsBtn" class="secondary">Reload groups</button>
+          <button id="clearConfigBtn" class="danger">Clear</button>
         </div>
       </div>
 
-      <div style="margin-top: 8px;">
-        <label for="colorInput">Color</label>
-        <div class="color-row">
-          <input type="color" id="colorInput" value="#ffffff" />
-          <button id="setColorBtn" class="btn btn-secondary btn-small" type="button">
-            Set color
-          </button>
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Groups</div>
+          <div class="pill" id="activeGroupLabel">No active group</div>
+        </div>
+
+        <div id="groupsContainer" class="groups-list">
+          <div style="font-size:0.75rem;color:var(--text-muted);">
+            No groups yet. Save API key, then use “Reload groups”.
+          </div>
+        </div>
+
+        <div class="controls-section">
+          <div class="controls-header">
+            <span>Active group controls</span>
+            <span id="capSummary">–</span>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-label">Brightness</div>
+            <input id="brightnessRange" type="range" min="1" max="100" value="100" />
+            <span class="slider-value" id="brightnessValue">100%</span>
+          </div>
+          <div class="btn-row" style="margin-top:4px;">
+            <button id="setBrightnessBtn" class="secondary" style="flex:1;">Set brightness</button>
+            <button id="refreshStateBtn" class="secondary">Refresh</button>
+          </div>
+
+          <div class="color-row">
+            <div class="slider-label">Color</div>
+            <input id="colorPicker" type="color" value="#ffffff" />
+            <button id="setColorBtn" class="secondary" style="flex:1;">Set color</button>
+          </div>
+
+          <div class="scene-row">
+            <select id="sceneSelect">
+              <option value="">No scenes loaded</option>
+            </select>
+            <button id="loadScenesBtn" class="secondary">Scenes</button>
+            <button id="applySceneBtn" class="secondary">Apply</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="footer">
-      <span id="selectedDeviceLabel">No device selected</span>
-      <small>Cloud API · v1</small>
+      <div class="footer">
+        <span id="statusText">Idle.</span>
+      </div>
     </div>
   </div>
 
   <script>
-    // Base URL for Govee Cloud API
-    var GOVEE_BASE_URL = "https://openapi.api.govee.com/router/api/v1";
+    const API_BASE = "https://openapi.api.govee.com/router/api/v1";
+    const ENDPOINTS = {
+      devices: API_BASE + "/user/devices",
+      control: API_BASE + "/device/control",
+      state: API_BASE + "/device/state",
+      scenes: API_BASE + "/device/scenes"
+    };
 
-    // Local storage keys
-    var LS_KEY_API = "goveeApiKey";
-    var LS_KEY_DEVICE = "goveeSelectedDevice";
+    const STORAGE_KEYS = {
+      apiKey: "goveeApiKey",
+      selectedGroup: "goveeSelectedGroup",
+      devicesSnapshot: "goveeDevicesSnapshot"  // shared with full widget if present
+    };
 
-    // DOM elements
-    var statusText = document.getElementById("statusText");
-    var apiKeyInput = document.getElementById("apiKeyInput");
-    var saveConfigBtn = document.getElementById("saveConfigBtn");
-    var clearConfigBtn = document.getElementById("clearConfigBtn");
-    var loadDevicesBtn = document.getElementById("loadDevicesBtn");
-    var deviceSelect = document.getElementById("deviceSelect");
-    var powerOnBtn = document.getElementById("powerOnBtn");
-    var powerOffBtn = document.getElementById("powerOffBtn");
-    var refreshStateBtn = document.getElementById("refreshStateBtn");
-    var brightnessRange = document.getElementById("brightnessRange");
-    var brightnessValue = document.getElementById("brightnessValue");
-    var setBrightnessBtn = document.getElementById("setBrightnessBtn");
-    var colorInput = document.getElementById("colorInput");
-    var setColorBtn = document.getElementById("setColorBtn");
-    var selectedDeviceLabel = document.getElementById("selectedDeviceLabel");
+    const apiKeyInput = document.getElementById("apiKeyInput");
+    const saveKeyBtn = document.getElementById("saveKeyBtn");
+    const reloadGroupsBtn = document.getElementById("reloadGroupsBtn");
+    const clearConfigBtn = document.getElementById("clearConfigBtn");
+    const groupsContainer = document.getElementById("groupsContainer");
+    const groupsSummary = document.getElementById("groupsSummary");
+    const activeGroupLabel = document.getElementById("activeGroupLabel");
+    const capSummary = document.getElementById("capSummary");
+    const statusText = document.getElementById("statusText");
 
-    function setStatus(message, ok) {
-      if (ok === void 0) ok = true;
+    const brightnessRange = document.getElementById("brightnessRange");
+    const brightnessValue = document.getElementById("brightnessValue");
+    const setBrightnessBtn = document.getElementById("setBrightnessBtn");
+    const refreshStateBtn = document.getElementById("refreshStateBtn");
+    const colorPicker = document.getElementById("colorPicker");
+    const setColorBtn = document.getElementById("setColorBtn");
+    const sceneSelect = document.getElementById("sceneSelect");
+    const loadScenesBtn = document.getElementById("loadScenesBtn");
+    const applySceneBtn = document.getElementById("applySceneBtn");
+
+    let groupsCache = {};  // key: "device|sku" -> device obj
+    let scenesCache = {};  // key: "device|sku" -> [{name,value}]
+    let activeGroupKey = "";
+
+    function setStatus(message, isError) {
       statusText.textContent = message;
-      if (ok) {
-        statusText.style.borderColor = "rgba(52, 211, 153, 0.7)";
-        statusText.style.color = "#a7f3d0";
-      } else {
-        statusText.style.borderColor = "rgba(248, 113, 113, 0.9)";
-        statusText.style.color = "#fecaca";
+      statusText.style.color = isError ? "#f97373" : "#9ca3af";
+      statusText.style.borderColor = isError
+        ? "rgba(248,113,113,0.9)"
+        : "rgba(55,65,81,0.9)";
+    }
+
+    function uuidFallback() {
+      if (window.crypto && window.crypto.randomUUID) {
+        return window.crypto.randomUUID();
       }
+      return String(Date.now()) + "-" + Math.floor(Math.random() * 1000000000);
     }
 
     function getApiKey() {
-      return window.localStorage.getItem(LS_KEY_API) || "";
+      return apiKeyInput.value.trim();
     }
 
-    function setApiKey(key) {
+    function saveApiKeyToStorage() {
+      const key = getApiKey();
       if (!key) {
-        window.localStorage.removeItem(LS_KEY_API);
-      } else {
-        window.localStorage.setItem(LS_KEY_API, key);
-      }
-    }
-
-    function saveSelectedDevice() {
-      var value = deviceSelect.value;
-      var label = deviceSelect.options[deviceSelect.selectedIndex]
-        ? deviceSelect.options[deviceSelect.selectedIndex].textContent
-        : "";
-      if (!value) {
-        window.localStorage.removeItem(LS_KEY_DEVICE);
+        setStatus("Enter an API key before saving.", true);
         return;
       }
-      var payload = { value: value, label: label };
-      window.localStorage.setItem(LS_KEY_DEVICE, JSON.stringify(payload));
+      try {
+        localStorage.setItem(STORAGE_KEYS.apiKey, key);
+        setStatus("API key saved.", false);
+      } catch (e) {
+        setStatus("Cannot save API key: " + e.message, true);
+      }
     }
 
-    function restoreSelectedDevice() {
-      var raw = window.localStorage.getItem(LS_KEY_DEVICE);
-      if (!raw) return;
+    function loadApiKeyFromStorage() {
       try {
-        var parsed = JSON.parse(raw);
-        if (parsed && parsed.value) {
-          deviceSelect.value = parsed.value;
-          if (deviceSelect.value === parsed.value) {
-            updateSelectedDeviceLabel();
-          }
+        const key = localStorage.getItem(STORAGE_KEYS.apiKey);
+        if (key) {
+          apiKeyInput.value = key;
+          setStatus("API key loaded from local storage.", false);
+        } else {
+          setStatus("Idle.", false);
         }
       } catch (e) {
-        console.warn("Failed to restore device selection:", e);
+        setStatus("Idle.", false);
       }
     }
 
-    function updateSelectedDeviceLabel() {
-      var opt = deviceSelect.options[deviceSelect.selectedIndex];
-      if (!opt || !opt.value) {
-        selectedDeviceLabel.textContent = "No device selected";
-      } else {
-        selectedDeviceLabel.textContent = opt.textContent;
+    function clearConfig() {
+      try {
+        localStorage.removeItem(STORAGE_KEYS.apiKey);
+        localStorage.removeItem(STORAGE_KEYS.selectedGroup);
+      } catch (e) {
+        // ignore
+      }
+      apiKeyInput.value = "";
+      groupsCache = {};
+      scenesCache = {};
+      activeGroupKey = "";
+      groupsContainer.innerHTML =
+        '<div style="font-size:0.75rem;color:var(--text-muted);">Config cleared. Save API key, then reload groups.</div>';
+      groupsSummary.textContent = "No groups loaded";
+      activeGroupLabel.textContent = "No active group";
+      capSummary.textContent = "–";
+      setStatus("Config cleared.", false);
+    }
+
+    function groupKey(dev) {
+      return dev.device + "|" + dev.sku;
+    }
+
+    function getActiveGroup() {
+      if (!activeGroupKey) return null;
+      return groupsCache[activeGroupKey] || null;
+    }
+
+    function persistActiveGroup() {
+      if (!activeGroupKey) return;
+      try {
+        localStorage.setItem(STORAGE_KEYS.selectedGroup, activeGroupKey);
+      } catch (e) {
+        // ignore
       }
     }
 
-    async function fetchJson(url, options) {
-      var res;
-      var text;
+    function restoreActiveGroup() {
       try {
-        res = await fetch(url, options || {});
+        const key = localStorage.getItem(STORAGE_KEYS.selectedGroup);
+        if (key && groupsCache[key]) {
+          setActiveGroup(key);
+        }
       } catch (e) {
-        console.error("Fetch failed:", e);
-        throw new Error("Network error");
+        // ignore
+      }
+    }
+
+    function describeCapabilities(dev) {
+      if (!dev || !Array.isArray(dev.capabilities)) return "Capabilities unknown";
+      const caps = dev.capabilities;
+      const names = [];
+
+      if (caps.some(c => c.type === "devices.capabilities.on_off")) {
+        names.push("power");
+      }
+      if (caps.some(c =>
+        c.type === "devices.capabilities.range" &&
+        c.instance === "brightness"
+      )) {
+        names.push("brightness");
+      }
+      if (caps.some(c =>
+        c.type === "devices.capabilities.color_setting" &&
+        c.instance === "colorRgb"
+      )) {
+        names.push("color");
+      }
+      if (caps.some(c =>
+        c.type === "devices.capabilities.dynamic_scene" &&
+        c.instance === "lightScene"
+      )) {
+        names.push("scenes");
       }
 
-      try {
-        text = await res.text();
-      } catch (e) {
-        console.error("Failed to read response text:", e);
-        throw new Error("Response read error");
-      }
+      return names.length ? names.join(" · ") : "Capabilities unknown";
+    }
 
-      var json = null;
-      if (text) {
-        try {
-          json = JSON.parse(text);
-        } catch (e) {
-          console.error("Invalid JSON from Govee:", text);
-          throw new Error("Invalid JSON");
+    function getRangeInfo(dev, instanceName) {
+      if (!dev || !Array.isArray(dev.capabilities)) return null;
+      for (let i = 0; i < dev.capabilities.length; i++) {
+        const c = dev.capabilities[i];
+        if (
+          c.type === "devices.capabilities.range" &&
+          c.instance === instanceName &&
+          c.parameters &&
+          c.parameters.range
+        ) {
+          return c.parameters.range;
         }
       }
-
-      if (!res.ok || (json && typeof json.code === "number" && json.code !== 200)) {
-        var msg =
-          (json && (json.message || json.msg)) ||
-          ("HTTP " + res.status + " error");
-        var err = new Error(msg);
-        err.status = res.status;
-        err.response = json;
-        throw err;
-      }
-
-      return json;
+      return null;
     }
 
-    async function loadDevices() {
-      var key = getApiKey();
-      if (!key) {
-        setStatus("No API key configured", false);
+    function hasCapability(dev, type, instance) {
+      if (!dev || !Array.isArray(dev.capabilities)) return false;
+      return dev.capabilities.some(c => c.type === type && c.instance === instance);
+    }
+
+    function applyActiveGroupGating() {
+      const dev = getActiveGroup();
+      if (!dev) {
+        brightnessRange.disabled = true;
+        setBrightnessBtn.disabled = true;
+        colorPicker.disabled = true;
+        setColorBtn.disabled = true;
+        sceneSelect.disabled = true;
+        loadScenesBtn.disabled = true;
+        applySceneBtn.disabled = true;
+        refreshStateBtn.disabled = true;
+        capSummary.textContent = "–";
         return;
       }
 
-      setStatus("Loading devices...");
-      deviceSelect.innerHTML = "<option>Loading…</option>";
+      capSummary.textContent = describeCapabilities(dev);
+
+      const brightRange = getRangeInfo(dev, "brightness");
+      if (brightRange) {
+        brightnessRange.min = String(brightRange.min || 1);
+        brightnessRange.max = String(brightRange.max || 100);
+        brightnessRange.disabled = false;
+        setBrightnessBtn.disabled = false;
+      } else {
+        brightnessRange.disabled = true;
+        setBrightnessBtn.disabled = true;
+      }
+
+      const hasColor = hasCapability(
+        dev,
+        "devices.capabilities.color_setting",
+        "colorRgb"
+      );
+      colorPicker.disabled = !hasColor;
+      setColorBtn.disabled = !hasColor;
+
+      const hasScene = hasCapability(
+        dev,
+        "devices.capabilities.dynamic_scene",
+        "lightScene"
+      );
+      sceneSelect.disabled = !hasScene;
+      loadScenesBtn.disabled = !hasScene;
+      applySceneBtn.disabled = !hasScene;
+
+      refreshStateBtn.disabled = false;
+    }
+
+    function renderGroupsList() {
+      const entries = Object.values(groupsCache);
+      if (!entries.length) {
+        groupsContainer.innerHTML =
+          '<div style="font-size:0.75rem;color:var(--text-muted);">No SameModeGroup groups found. Configure groups in Govee Home and reload.</div>';
+        groupsSummary.textContent = "0 groups";
+        activeGroupLabel.textContent = "No active group";
+        applyActiveGroupGating();
+        return;
+      }
+
+      entries.sort((a, b) => {
+        const nameA = (a.deviceName || a.device || "").toLowerCase();
+        const nameB = (b.deviceName || b.device || "").toLowerCase();
+        if (nameA < nameB) return -1;
+        if (nameA > nameB) return 1;
+        return 0;
+      });
+
+      groupsContainer.innerHTML = "";
+      entries.forEach(dev => {
+        const key = groupKey(dev);
+        const row = document.createElement("div");
+        row.className = "group-row";
+        row.dataset.key = key;
+
+        const name = document.createElement("div");
+        name.className = "group-name";
+        name.textContent = dev.deviceName || dev.device || "Unnamed group";
+
+        const btnOn = document.createElement("button");
+        btnOn.textContent = "On";
+        btnOn.className = "primary";
+        btnOn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          sendControlToDevice(dev, {
+            type: "devices.capabilities.on_off",
+            instance: "powerSwitch",
+            value: 1
+          });
+        });
+
+        const btnOff = document.createElement("button");
+        btnOff.textContent = "Off";
+        btnOff.className = "secondary";
+        btnOff.addEventListener("click", function (e) {
+          e.stopPropagation();
+          sendControlToDevice(dev, {
+            type: "devices.capabilities.on_off",
+            instance: "powerSwitch",
+            value: 0
+          });
+        });
+
+        row.appendChild(name);
+        row.appendChild(btnOn);
+        row.appendChild(btnOff);
+
+        row.addEventListener("click", function () {
+          setActiveGroup(key);
+        });
+
+        groupsContainer.appendChild(row);
+      });
+
+      groupsSummary.textContent = entries.length + " group" + (entries.length === 1 ? "" : "s");
+
+      if (!activeGroupKey && entries[0]) {
+        setActiveGroup(groupKey(entries[0]));
+      } else {
+        highlightActiveRow();
+        applyActiveGroupGating();
+      }
+    }
+
+    function highlightActiveRow() {
+      const rows = groupsContainer.querySelectorAll(".group-row");
+      rows.forEach(r => {
+        if (r.dataset.key === activeGroupKey) {
+          r.classList.add("active");
+        } else {
+          r.classList.remove("active");
+        }
+      });
+    }
+
+    function setActiveGroup(key) {
+      if (!groupsCache[key]) return;
+      activeGroupKey = key;
+      const dev = getActiveGroup();
+      activeGroupLabel.textContent =
+        "Active: " + (dev.deviceName || dev.device || key);
+      highlightActiveRow();
+      applyActiveGroupGating();
+      persistActiveGroup();
+    }
+
+    async function loadGroups() {
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        setStatus("Enter your Govee API key first.", true);
+        return;
+      }
+
+      setStatus("Loading groups…", false);
+      groupsContainer.innerHTML =
+        '<div style="font-size:0.75rem;color:var(--text-muted);">Loading…</div>';
 
       try {
-        var data = await fetchJson(GOVEE_BASE_URL + "/user/devices", {
+        const res = await fetch(ENDPOINTS.devices, {
           method: "GET",
           headers: {
-            "Govee-API-Key": key
+            "Govee-API-Key": apiKey
           }
         });
 
-        console.log("Govee /user/devices response:", data);
-
-        var payload = data && data.data;
-        var devices = [];
-        if (Array.isArray(payload)) {
-          devices = payload;
-        } else if (payload && Array.isArray(payload.devices)) {
-          devices = payload.devices;
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error("HTTP " + res.status + " " + text);
         }
 
-        if (!devices.length) {
-          deviceSelect.innerHTML =
-            '<option value="">No devices returned</option>';
-          setStatus("No devices returned from API", false);
-          return;
+        const data = await res.json();
+
+        if (typeof data.code === "number" && data.code !== 200) {
+          const msg = data.msg || data.message || "Unknown error";
+          throw new Error("API error code " + data.code + ": " + msg);
         }
 
-        populateDeviceSelect(devices);
-        setStatus("Loaded " + devices.length + " devices");
-      } catch (err) {
-        console.error("Device load failed:", err);
-        deviceSelect.innerHTML =
-          '<option value="">Device load failed</option>';
-        setStatus(
-          "Device load failed: " + (err.message || "Unknown error"),
-          false
-        );
+        let devices = [];
+        if (Array.isArray(data.data)) {
+          devices = data.data;
+        } else if (data.data && Array.isArray(data.data.devices)) {
+          devices = data.data.devices;
+        } else if (Array.isArray(data.payload)) {
+          devices = data.payload;
+        } else if (data.payload && Array.isArray(data.payload.devices)) {
+          devices = data.payload.devices;
+        }
+
+        const groups = devices.filter(d => d.sku === "SameModeGroup");
+
+        groupsCache = {};
+        groups.forEach(g => {
+          groupsCache[groupKey(g)] = g;
+        });
+
+        renderGroupsList();
+        setStatus("Groups loaded (" + groups.length + ").", false);
+      } catch (e) {
+        console.error(e);
+        groupsContainer.innerHTML =
+          '<div style="font-size:0.75rem;color:var(--text-muted);">Error loading groups.</div>';
+        groupsSummary.textContent = "Load error";
+        setStatus("Group load failed: " + e.message, true);
       }
     }
 
-    function populateDeviceSelect(devices) {
-      deviceSelect.innerHTML = "";
-      var placeholder = document.createElement("option");
-      placeholder.value = "";
-      placeholder.textContent = "Select a device…";
-      deviceSelect.appendChild(placeholder);
-
-      for (var i = 0; i < devices.length; i++) {
-        var d = devices[i];
-        var opt = document.createElement("option");
-        opt.value = d.device + "|" + d.sku;
-        var label = (d.deviceName || d.device || "Unnamed device") +
-          " (" + d.sku + ")";
-        opt.textContent = label;
-        deviceSelect.appendChild(opt);
-      }
-
-      restoreSelectedDevice();
-    }
-
-    function getSelectedDevice() {
-      var value = deviceSelect.value;
-      if (!value) return null;
-      var parts = value.split("|");
-      if (parts.length < 2) return null;
-      return { device: parts[0], sku: parts[1] };
-    }
-
-    async function sendControl(type, instance, value) {
-      var key = getApiKey();
-      if (!key) {
-        setStatus("No API key configured", false);
-        return;
-      }
-      var sel = getSelectedDevice();
-      if (!sel) {
-        setStatus("Select a device first", false);
+    async function sendControlToDevice(dev, capability) {
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        setStatus("Enter your Govee API key first.", true);
         return;
       }
 
-      var body = {
-        requestId: "dak-" + Date.now(),
-        payload: {
-          sku: sel.sku,
-          device: sel.device,
-          capability: {
-            type: type,
-            instance: instance,
-            value: value
-          }
-        }
-      };
-
-      console.log("Govee /device/control:", body);
+      setStatus("Sending command…", false);
 
       try {
-        setStatus("Sending command...");
-        await fetchJson(GOVEE_BASE_URL + "/device/control", {
+        const res = await fetch(ENDPOINTS.control, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Govee-API-Key": key
+            "Govee-API-Key": apiKey
           },
-          body: JSON.stringify(body)
+          body: JSON.stringify({
+            requestId: uuidFallback(),
+            payload: {
+              device: dev.device,
+              sku: dev.sku,
+              capability: capability
+            }
+          })
         });
-        setStatus("Command sent");
-      } catch (err) {
-        console.error("Control failed:", err);
-        setStatus("Control failed: " + (err.message || "Error"), false);
+
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error("HTTP " + res.status + " " + text);
+        }
+
+        const data = await res.json();
+        if (typeof data.code === "number" && data.code !== 200) {
+          const msg = data.msg || data.message || "Unknown error";
+          throw new Error("API error code " + data.code + ": " + msg);
+        }
+
+        setStatus("Command sent successfully.", false);
+      } catch (e) {
+        console.error(e);
+        setStatus("Command failed: " + e.message, true);
       }
     }
 
-    async function refreshState() {
-      var key = getApiKey();
-      if (!key) {
-        setStatus("No API key configured", false);
+    async function refreshStateForActiveGroup() {
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        setStatus("Enter your Govee API key first.", true);
         return;
       }
-      var sel = getSelectedDevice();
-      if (!sel) {
-        setStatus("Select a device first", false);
+      const dev = getActiveGroup();
+      if (!dev) {
+        setStatus("Select an active group first.", true);
         return;
       }
 
-      var url =
-        GOVEE_BASE_URL +
-        "/device/state?device=" +
-        encodeURIComponent(sel.device) +
-        "&sku=" +
-        encodeURIComponent(sel.sku);
-
-      console.log("Govee /device/state:", url);
+      setStatus("Refreshing state…", false);
 
       try {
-        setStatus("Refreshing state...");
-        var data = await fetchJson(url, {
-          method: "GET",
+        const res = await fetch(ENDPOINTS.state, {
+          method: "POST",
           headers: {
-            "Govee-API-Key": key
-          }
+            "Content-Type": "application/json",
+            "Govee-API-Key": apiKey
+          },
+          body: JSON.stringify({
+            requestId: uuidFallback(),
+            payload: {
+              device: dev.device,
+              sku: dev.sku
+            }
+          })
         });
 
-        console.log("Govee state response:", data);
-
-        var payload = data && data.data;
-        var caps = [];
-        if (payload && Array.isArray(payload.capabilities)) {
-          caps = payload.capabilities;
-        } else if (Array.isArray(payload)) {
-          // some examples show an array of objects with capabilities
-          if (payload[0] && Array.isArray(payload[0].capabilities)) {
-            caps = payload[0].capabilities;
-          }
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error("HTTP " + res.status + " " + text);
         }
 
-        // Update brightness if present
-        for (var i = 0; i < caps.length; i++) {
-          var c = caps[i];
-          if (
-            c.type === "devices.capabilities.range" &&
-            c.instance === "brightness" &&
-            typeof c.value === "number"
-          ) {
-            var v = Math.max(
-              1,
-              Math.min(100, Math.round(c.value))
-            );
-            brightnessRange.value = v;
-            brightnessValue.textContent = v + "%";
-          }
+        const data = await res.json();
+        if (typeof data.status === "number" && data.status !== 200) {
+          const msg = data.msg || data.message || "Unknown error";
+          throw new Error("API status " + data.status + ": " + msg);
         }
 
-        setStatus("State refreshed");
-      } catch (err) {
-        console.error("State refresh failed:", err);
-        setStatus("State refresh failed: " + (err.message || "Error"), false);
+        const payload = data.payload || {};
+        const caps = Array.isArray(payload.capabilities)
+          ? payload.capabilities
+          : [];
+
+        const brightCap = caps.find(c =>
+          c.type === "devices.capabilities.range" &&
+          c.instance === "brightness" &&
+          c.state &&
+          typeof c.state.value === "number"
+        );
+        if (brightCap) {
+          const v = Math.round(brightCap.state.value);
+          brightnessRange.value = String(v);
+          brightnessValue.textContent = v + "%";
+        }
+
+        const colorCap = caps.find(c =>
+          c.type === "devices.capabilities.color_setting" &&
+          c.instance === "colorRgb" &&
+          c.state &&
+          typeof c.state.value === "number"
+        );
+        if (colorCap) {
+          const rgbInt = colorCap.state.value;
+          const r = (rgbInt >> 16) & 255;
+          const g = (rgbInt >> 8) & 255;
+          const b = rgbInt & 255;
+          const hex =
+            "#" +
+            [r, g, b]
+              .map(x => x.toString(16).padStart(2, "0"))
+              .join("");
+          colorPicker.value = hex;
+        }
+
+        const powerCap = caps.find(c =>
+          c.type === "devices.capabilities.on_off" &&
+          c.instance === "powerSwitch" &&
+          c.state &&
+          typeof c.state.value !== "undefined"
+        );
+
+        if (powerCap) {
+          const val = powerCap.state.value ? "On" : "Off";
+          setStatus("State: " + val + " · refreshed.", false);
+        } else {
+          setStatus("State refreshed.", false);
+        }
+      } catch (e) {
+        console.error(e);
+        setStatus("State refresh failed: " + e.message, true);
       }
     }
 
-    function hexColorToInt(hex) {
-      if (!hex) return 0;
-      if (hex.charAt(0) === "#") hex = hex.slice(1);
-      if (hex.length === 3) {
-        // short form rgb
-        hex =
-          hex.charAt(0) + hex.charAt(0) +
-          hex.charAt(1) + hex.charAt(1) +
-          hex.charAt(2) + hex.charAt(2);
+    async function loadScenesForActiveGroup() {
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        setStatus("Enter your Govee API key first.", true);
+        return;
       }
-      var n = parseInt(hex, 16);
+      const dev = getActiveGroup();
+      if (!dev) {
+        setStatus("Select an active group first.", true);
+        return;
+      }
+
+      const key = groupKey(dev);
+      if (scenesCache[key] && scenesCache[key].length) {
+        populateSceneSelect(scenesCache[key]);
+        setStatus("Scenes loaded from cache.", false);
+        return;
+      }
+
+      setStatus("Loading scenes…", false);
+
+      try {
+        const res = await fetch(ENDPOINTS.scenes, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Govee-API-Key": apiKey
+          },
+          body: JSON.stringify({
+            requestId: uuidFallback(),
+            payload: {
+              device: dev.device,
+              sku: dev.sku
+            }
+          })
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error("HTTP " + res.status + " " + text);
+        }
+
+        const data = await res.json();
+        if (typeof data.status === "number" && data.status !== 200) {
+          const msg = data.msg || data.message || "Unknown error";
+          throw new Error("API status " + data.status + ": " + msg);
+        }
+
+        let caps = [];
+        if (Array.isArray(data.data)) {
+          if (data.data[0] && Array.isArray(data.data[0].capabilities)) {
+            caps = data.data[0].capabilities;
+          }
+        } else if (data.data && Array.isArray(data.data.capabilities)) {
+          caps = data.data.capabilities;
+        }
+
+        const scenes = [];
+        caps.forEach(c => {
+          if (
+            c.type === "devices.capabilities.dynamic_scene" &&
+            c.instance === "lightScene" &&
+            c.parameters &&
+            Array.isArray(c.parameters.options)
+          ) {
+            c.parameters.options.forEach(opt => {
+              if (typeof opt.value !== "undefined") {
+                scenes.push({
+                  name: opt.name || String(opt.value),
+                  value: opt.value
+                });
+              }
+            });
+          }
+        });
+
+        scenesCache[key] = scenes;
+        populateSceneSelect(scenes);
+
+        if (!scenes.length) {
+          setStatus("No scenes reported for this group.", true);
+        } else {
+          setStatus("Scenes loaded (" + scenes.length + ").", false);
+        }
+      } catch (e) {
+        console.error(e);
+        populateSceneSelect([]);
+        setStatus("Scene load failed: " + e.message, true);
+      }
+    }
+
+    function populateSceneSelect(scenes) {
+      if (!scenes || !scenes.length) {
+        sceneSelect.innerHTML = '<option value="">No scenes available</option>';
+        return;
+      }
+      sceneSelect.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Select scene…";
+      sceneSelect.appendChild(placeholder);
+
+      scenes.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = String(s.value);
+        opt.textContent = s.name + " (" + s.value + ")";
+        sceneSelect.appendChild(opt);
+      });
+    }
+
+    function hexToRgbInt(hex) {
+      if (!hex) return 0;
+      if (hex.charAt(0) === "#") {
+        hex = hex.slice(1);
+      }
+      if (hex.length === 3) {
+        hex =
+          hex.charAt(0) +
+          hex.charAt(0) +
+          hex.charAt(1) +
+          hex.charAt(1) +
+          hex.charAt(2) +
+          hex.charAt(2);
+      }
+      const n = parseInt(hex, 16);
       if (isNaN(n)) return 0;
       return n;
     }
 
-    // Event wiring
-    saveConfigBtn.addEventListener("click", function () {
-      var key = apiKeyInput.value.trim();
-      if (!key) {
-        setStatus("API key cleared", false);
-        setApiKey("");
-        return;
-      }
-      setApiKey(key);
-      setStatus("API key saved");
-    });
-
-    clearConfigBtn.addEventListener("click", function () {
-      setApiKey("");
-      window.localStorage.removeItem(LS_KEY_DEVICE);
-      apiKeyInput.value = "";
-      deviceSelect.innerHTML =
-        '<option value="">No devices loaded</option>';
-      updateSelectedDeviceLabel();
-      setStatus("Configuration cleared", false);
-    });
-
-    loadDevicesBtn.addEventListener("click", function () {
-      loadDevices();
-    });
-
-    deviceSelect.addEventListener("change", function () {
-      saveSelectedDevice();
-      updateSelectedDeviceLabel();
-    });
-
-    powerOnBtn.addEventListener("click", function () {
-      sendControl("devices.capabilities.on_off", "powerSwitch", 1);
-    });
-
-    powerOffBtn.addEventListener("click", function () {
-      sendControl("devices.capabilities.on_off", "powerSwitch", 0);
-    });
-
-    refreshStateBtn.addEventListener("click", function () {
-      refreshState();
-    });
-
     brightnessRange.addEventListener("input", function () {
-      var val = parseInt(brightnessRange.value, 10) || 1;
-      brightnessValue.textContent = val + "%";
+      brightnessValue.textContent = brightnessRange.value + "%";
     });
+
+    saveKeyBtn.addEventListener("click", saveApiKeyToStorage);
+    clearConfigBtn.addEventListener("click", clearConfig);
+    reloadGroupsBtn.addEventListener("click", loadGroups);
+
+    refreshStateBtn.addEventListener("click", refreshStateForActiveGroup);
 
     setBrightnessBtn.addEventListener("click", function () {
-      var val = parseInt(brightnessRange.value, 10) || 1;
-      val = Math.max(1, Math.min(100, val));
-      sendControl("devices.capabilities.range", "brightness", val);
+      const dev = getActiveGroup();
+      if (!dev) {
+        setStatus("Select an active group first.", true);
+        return;
+      }
+      const rangeInfo = getRangeInfo(dev, "brightness");
+      let val = parseInt(brightnessRange.value, 10) || 1;
+      if (rangeInfo) {
+        const min = typeof rangeInfo.min === "number" ? rangeInfo.min : 1;
+        const max = typeof rangeInfo.max === "number" ? rangeInfo.max : 100;
+        val = Math.max(min, Math.min(max, val));
+      } else {
+        val = Math.max(1, Math.min(100, val));
+      }
+      sendControlToDevice(dev, {
+        type: "devices.capabilities.range",
+        instance: "brightness",
+        value: val
+      });
     });
 
     setColorBtn.addEventListener("click", function () {
-      var hex = colorInput.value || "#ffffff";
-      var v = hexColorToInt(hex);
-      sendControl("devices.capabilities.color_setting", "colorRgb", v);
+      const dev = getActiveGroup();
+      if (!dev) {
+        setStatus("Select an active group first.", true);
+        return;
+      }
+      if (!hasCapability(dev, "devices.capabilities.color_setting", "colorRgb")) {
+        setStatus("Active group does not support colorRgb.", true);
+        return;
+      }
+      const hex = colorPicker.value || "#ffffff";
+      const rgbInt = hexToRgbInt(hex);
+      sendControlToDevice(dev, {
+        type: "devices.capabilities.color_setting",
+        instance: "colorRgb",
+        value: rgbInt
+      });
     });
 
-    // Initial load
-    (function init() {
-      var key = getApiKey();
-      if (key) {
-        apiKeyInput.value = key;
-        setStatus("API key loaded");
-        // optionally, auto-load devices:
-        // loadDevices();
-      } else {
-        setStatus("Ready");
+    loadScenesBtn.addEventListener("click", loadScenesForActiveGroup);
+
+    applySceneBtn.addEventListener("click", function () {
+      const dev = getActiveGroup();
+      if (!dev) {
+        setStatus("Select an active group first.", true);
+        return;
       }
-      updateSelectedDeviceLabel();
+      const valRaw = sceneSelect.value;
+      if (!valRaw) {
+        setStatus("Select a scene first.", true);
+        return;
+      }
+      let val;
+      if (/^-?\d+$/.test(valRaw)) {
+        val = parseInt(valRaw, 10);
+      } else {
+        val = valRaw;
+      }
+      sendControlToDevice(dev, {
+        type: "devices.capabilities.dynamic_scene",
+        instance: "lightScene",
+        value: val
+      });
+    });
+
+    (function init() {
+      loadApiKeyFromStorage();
+
+      try {
+        const snapshotRaw = localStorage.getItem(STORAGE_KEYS.devicesSnapshot);
+        if (snapshotRaw) {
+          const snapshot = JSON.parse(snapshotRaw);
+          if (Array.isArray(snapshot) && snapshot.length) {
+            const groups = snapshot.filter(d => d.sku === "SameModeGroup");
+            groupsCache = {};
+            groups.forEach(g => {
+              groupsCache[groupKey(g)] = g;
+            });
+            renderGroupsList();
+            restoreActiveGroup();
+            applyActiveGroupGating();
+            setStatus("Groups loaded from cache. Use Reload groups to refresh.", false);
+            return;
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      applyActiveGroupGating();
     })();
   </script>
 </body>
