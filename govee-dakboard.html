@@ -287,24 +287,41 @@
     .color-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       margin-top: 8px;
     }
 
-    input[type="color"] {
-      width: 42px;
-      height: 26px;
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.8);
-      padding: 0;
-      background: transparent;
-      cursor: pointer;
+    .color-swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      flex: 1;
     }
 
-    .color-text {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      flex: 1;
+    button.color-chip {
+      padding: 0;
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.9);
+      background-clip: padding-box;
+      box-shadow: none;
+      font-size: 0;
+    }
+
+    button.color-chip:hover {
+      transform: scale(1.08);
+      border-color: rgba(255, 255, 255, 0.9);
+    }
+
+    .color-current {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.85);
+      background: #ffffff;
+      flex-shrink: 0;
     }
 
     .group-card {
@@ -396,15 +413,12 @@
   </div>
 
   <script>
-    // Base URLs
     const BASE_URL = "https://openapi.api.govee.com";
     const DEVICES_URL = BASE_URL + "/router/api/v1/user/devices";
     const CONTROL_URL = BASE_URL + "/router/api/v1/device/control";
     const STATE_URL = BASE_URL + "/router/api/v1/device/state";
 
-    // Virtual groups: only the groups you requested, with the exact order you specified.
-    // Each group maps to the deviceName strings from /user/devices,
-    // or to other group names (for Upstairs Lights).
+    // Virtual groups (in the requested order)
     const GROUP_DEFS = {
       "Living Room": [
         "Right buzz",
@@ -452,7 +466,6 @@
       ]
     };
 
-    // Explicit render order for groups
     const GROUP_ORDER = [
       "Living Room",
       "Kitchen",
@@ -464,7 +477,15 @@
       "Bedroom"
     ];
 
-    // DOM elements
+    const PRESET_COLORS = [
+      { hex: "#ffffff", label: "White" },
+      { hex: "#ffd9a0", label: "Warm" },
+      { hex: "#ff9da3", label: "Sunset" },
+      { hex: "#7dd3fc", label: "Sky" },
+      { hex: "#a855f7", label: "Purple" },
+      { hex: "#4ade80", label: "Mint" }
+    ];
+
     const apiKeyInput = document.getElementById("apiKeyInput");
     const saveKeyBtn = document.getElementById("saveKeyBtn");
     const clearConfigBtn = document.getElementById("clearConfigBtn");
@@ -472,7 +493,6 @@
     const groupsContainer = document.getElementById("groupsContainer");
     const statusText = document.getElementById("statusText");
 
-    // Local state
     const deviceIndex = {};      // deviceName -> { device, sku, name }
     let resolvedGroups = {};     // groupName -> [ { device, sku, name } ]
 
@@ -544,7 +564,6 @@
     }
 
     function buildResolvedGroups(devices) {
-      // Index individual lights by deviceName for quick lookup
       for (const d of devices) {
         if (!d || !d.deviceName || !d.device || !d.sku) continue;
         if (d.type && d.type !== "devices.types.light") continue;
@@ -563,7 +582,7 @@
         const defs = GROUP_DEFS[name];
         if (!defs) return [];
         if (stack.includes(name)) {
-          console.warn("Circular group reference detected:", stack, "->", name);
+          console.warn("Circular group reference:", stack, "->", name);
           return [];
         }
         const nextStack = stack.concat(name);
@@ -584,8 +603,6 @@
                 out.push(nd);
               }
             }
-          } else {
-            // Unknown token; ignore silently
           }
         }
 
@@ -605,7 +622,7 @@
       const available = Object.keys(resolvedGroups);
       if (!available.length) {
         groupsContainer.innerHTML =
-          '<div class="muted">No mapped groups found. Check device names and GROUP_DEFS.</div>';
+          '<div class="muted">No mapped groups found. Check device names and group definitions.</div>';
         return;
       }
 
@@ -618,6 +635,17 @@
         const countLabel = groupDevices.length === 1
           ? "1 light"
           : groupDevices.length + " lights";
+
+        const swatchesHtml = PRESET_COLORS.map(c => `
+          <button
+            type="button"
+            class="color-chip"
+            data-group="${safeGroup}"
+            data-color="${c.hex}"
+            title="${escapeHtml(c.label)}"
+            style="background:${c.hex};"
+          ></button>
+        `).join("");
 
         html += `
           <div class="group-card" data-group="${safeGroup}">
@@ -652,13 +680,10 @@
 
             <div class="color-row">
               <div class="slider-label">Color</div>
-              <input
-                type="color"
-                class="color-picker"
-                data-group="${safeGroup}"
-                value="#ffffff"
-              />
-              <div class="color-text">Picking a color updates the group</div>
+              <div class="color-swatches" data-group="${safeGroup}">
+                ${swatchesHtml}
+              </div>
+              <div class="color-current" data-group="${safeGroup}" title="Current color"></div>
             </div>
           </div>
         `;
@@ -692,10 +717,9 @@
         }
 
         const data = await res.json();
-        const code = data.code;
-        if (code !== 200) {
+        if (data.code !== 200) {
           throw new Error(
-            "API error code " + code + ": " + (data.msg || data.message || "unknown")
+            "API error code " + data.code + ": " + (data.msg || data.message || "unknown")
           );
         }
 
@@ -707,10 +731,10 @@
           return;
         }
 
-        // Build device index and resolved groups, then render UI
         for (const k of Object.keys(deviceIndex)) {
           delete deviceIndex[k];
         }
+
         buildResolvedGroups(devices);
         renderGroupsUI();
 
@@ -719,7 +743,13 @@
           setStatus("Devices loaded, but no groups matched.", true);
         } else {
           setStatus("Devices loaded. Refreshing group states…", false);
-          await refreshAllGroups(); // Auto-refresh all groups after load
+          // Defer so the DOM can paint, then refresh all groups
+          setTimeout(() => {
+            refreshAllGroups().catch(e => {
+              console.error(e);
+              setStatus("Group refresh failed: " + e.message, true);
+            });
+          }, 50);
         }
       } catch (e) {
         console.error(e);
@@ -898,8 +928,8 @@
             [r, g, b]
               .map(x => x.toString(16).padStart(2, "0"))
               .join("");
-          const colorEl = card.querySelector(".color-picker");
-          if (colorEl) colorEl.value = hex;
+          const dot = card.querySelector(".color-current");
+          if (dot) dot.style.backgroundColor = hex;
         }
       } catch (e) {
         console.error(e);
@@ -917,18 +947,36 @@
       }
     }
 
-    // Event wiring
-
     loadApiKeyFromStorage();
 
     saveKeyBtn.addEventListener("click", saveApiKeyToStorage);
     clearConfigBtn.addEventListener("click", clearConfig);
     loadDevicesBtn.addEventListener("click", loadDevices);
 
-    // Event delegation for all group controls (click)
+    // Click handlers (groups)
     groupsContainer.addEventListener("click", function (e) {
       const target = e.target;
       if (!(target instanceof HTMLElement)) return;
+
+      if (target.classList.contains("color-chip")) {
+        const groupName = target.dataset.group;
+        const hex = target.dataset.color;
+        if (!groupName || !hex) return;
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        const rgbInt = (r << 16) + (g << 8) + b;
+        sendGroupControl(groupName, {
+          type: "devices.capabilities.color_setting",
+          instance: "colorRgb",
+          value: rgbInt
+        });
+        const dot = groupsContainer.querySelector(
+          '.color-current[data-group="' + groupName.replace(/"/g, '&quot;') + '"]'
+        );
+        if (dot) dot.style.background = hex;
+        return;
+      }
 
       const groupName = target.dataset.group;
       if (!groupName) return;
@@ -964,40 +1012,17 @@
       }
     });
 
-    // Event delegation for slider + color changes
+    // Slider label updates
     groupsContainer.addEventListener("input", function (e) {
       const target = e.target;
       if (!(target instanceof HTMLElement)) return;
+      if (!target.classList.contains("brightness-range")) return;
 
-      if (target.classList.contains("brightness-range")) {
-        const card = target.closest(".group-card");
-        if (!card) return;
-        const valEl = card.querySelector(".slider-value");
-        if (!valEl) return;
-        valEl.textContent = target.value + "%";
-      }
-    });
-
-    // Color picker change -> update group color
-    groupsContainer.addEventListener("change", function (e) {
-      const target = e.target;
-      if (!(target instanceof HTMLElement)) return;
-      if (!target.classList.contains("color-picker")) return;
-
-      const groupName = target.dataset.group;
-      if (!groupName) return;
-
-      const hex = target.value || "#ffffff";
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
-      const rgbInt = (r << 16) + (g << 8) + b;
-
-      sendGroupControl(groupName, {
-        type: "devices.capabilities.color_setting",
-        instance: "colorRgb",
-        value: rgbInt
-      });
+      const card = target.closest(".group-card");
+      if (!card) return;
+      const valEl = card.querySelector(".slider-value");
+      if (!valEl) return;
+      valEl.textContent = target.value + "%";
     });
   </script>
 </body>
