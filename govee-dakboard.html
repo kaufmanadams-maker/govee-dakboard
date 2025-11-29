@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Govee Groups – DakBoard</title>
+  <title>Govee Lights – DakBoard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
       color-scheme: dark;
       --bg: #050816;
       --panel: #111827;
+      --panel-alt: #0b1220;
       --accent: #2563eb;
       --accent-soft: rgba(37, 99, 235, 0.15);
       --text-main: #e5e7eb;
@@ -152,6 +153,11 @@
       color: #9ca3af;
     }
 
+    .section-hint {
+      font-size: 0.66rem;
+      color: var(--text-muted);
+    }
+
     label {
       font-size: 0.7rem;
       color: var(--text-muted);
@@ -159,7 +165,8 @@
       margin-bottom: 4px;
     }
 
-    input[type="password"] {
+    input[type="password"],
+    select {
       width: 100%;
       padding: 6px 9px;
       border-radius: 10px;
@@ -170,7 +177,8 @@
       outline: none;
     }
 
-    input[type="password"]:focus {
+    input[type="password"]:focus,
+    select:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.7);
     }
@@ -244,62 +252,17 @@
       transform: none;
     }
 
-    .groups-list {
-      display: flex;
-      flex-direction: column;
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 6px;
-      max-height: 220px;
-      overflow-y: auto;
-      padding-right: 2px;
-    }
-
-    .group-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 7px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(55, 65, 81, 0.95);
-      cursor: pointer;
-    }
-
-    .group-row.active {
-      border-color: rgba(96, 165, 250, 0.95);
-      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.7);
-      background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.25), #020617);
-    }
-
-    .group-name {
-      flex: 1;
-      font-size: 0.78rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .group-row button {
-      padding: 4px 10px;
-      font-size: 0.7rem;
-    }
-
-    .controls-section {
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid rgba(31, 41, 55, 0.9);
-    }
-
-    .controls-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 6px;
+      margin-top: 4px;
       margin-bottom: 4px;
     }
 
-    .controls-header span {
-      font-size: 0.7rem;
-      color: var(--text-muted);
+    .controls-grid button {
+      text-align: center;
+      padding-inline: 0;
     }
 
     .slider-row {
@@ -309,10 +272,16 @@
       margin-top: 6px;
     }
 
+    input[type="range"] {
+      flex: 1;
+      accent-color: #60a5fa;
+    }
+
     .slider-label {
       font-size: 0.7rem;
       color: var(--text-muted);
       width: 60px;
+      text-align: left;
     }
 
     .slider-value {
@@ -320,11 +289,6 @@
       color: var(--text-muted);
       width: 40px;
       text-align: right;
-    }
-
-    input[type="range"] {
-      flex: 1;
-      accent-color: #60a5fa;
     }
 
     .color-row {
@@ -344,29 +308,6 @@
       cursor: pointer;
     }
 
-    .scene-row {
-      display: flex;
-      gap: 6px;
-      margin-top: 6px;
-      align-items: center;
-    }
-
-    .scene-row select {
-      flex: 1;
-      padding: 6px 9px;
-      border-radius: 10px;
-      border: 1px solid rgba(55, 65, 81, 0.9);
-      background-color: rgba(15, 23, 42, 0.96);
-      color: var(--text-main);
-      font-size: 0.78rem;
-      outline: none;
-    }
-
-    .scene-row select:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.7);
-    }
-
     .footer {
       margin-top: 8px;
       font-size: 0.65rem;
@@ -381,6 +322,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      max-width: 70%;
     }
   </style>
 </head>
@@ -389,143 +331,160 @@
     <div class="card-inner">
       <div class="header-row">
         <div>
-          <h1>Govee Groups</h1>
-          <p class="subtitle">SameModeGroup · Quick control</p>
+          <h1>Govee Lights</h1>
+          <p class="subtitle">Cloud API · DakBoard widget</p>
         </div>
-        <div class="badge-api">Cloud API v1</div>
+        <div class="badge-api">Cloud API · v1</div>
       </div>
 
+      <!-- Configuration -->
       <div class="section">
         <div class="section-header">
           <div class="section-title">Configuration</div>
-          <div class="pill" id="groupsSummary">No groups loaded</div>
+          <div class="pill">Stored in browser</div>
         </div>
         <label for="apiKeyInput">Govee API Key</label>
         <input id="apiKeyInput" type="password" autocomplete="off" />
         <div class="btn-row">
           <button id="saveKeyBtn" class="primary">Save</button>
-          <button id="reloadGroupsBtn" class="secondary">Reload groups</button>
-          <button id="clearConfigBtn" class="danger">Clear</button>
+          <button id="loadDevicesBtn" class="secondary">Reload devices</button>
+          <button id="clearConfigBtn" class="danger">Clear config</button>
         </div>
       </div>
 
+      <!-- Target selection -->
       <div class="section">
         <div class="section-header">
-          <div class="section-title">Groups</div>
-          <div class="pill" id="activeGroupLabel">No active group</div>
+          <div class="section-title">Target</div>
+          <div class="section-hint">Groups + individual lights</div>
+        </div>
+        <label for="targetSelect">Device or group</label>
+        <select id="targetSelect">
+          <option value="">No devices loaded</option>
+        </select>
+      </div>
+
+      <!-- Controls -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Controls</div>
+          <div class="section-hint">Power · Brightness · Color · Scene</div>
         </div>
 
-        <div id="groupsContainer" class="groups-list">
-          <div style="font-size:0.75rem;color:var(--text-muted);">
-            No groups yet. Save API key, then use “Reload groups”.
-          </div>
+        <div class="controls-grid">
+          <button id="onBtn" class="primary">On</button>
+          <button id="offBtn" class="secondary">Off</button>
+          <button id="refreshBtn" class="secondary">Refresh</button>
         </div>
 
-        <div class="controls-section">
-          <div class="controls-header">
-            <span>Active group controls</span>
-            <span id="capSummary">–</span>
-          </div>
+        <div class="slider-row">
+          <div class="slider-label">Brightness</div>
+          <input id="brightnessRange" type="range" min="1" max="100" value="100" />
+          <span class="slider-value" id="brightnessValue">100%</span>
+        </div>
+        <div class="btn-row">
+          <button id="setBrightnessBtn" class="secondary" style="flex: 1;">
+            Set brightness
+          </button>
+        </div>
 
-          <div class="slider-row">
-            <div class="slider-label">Brightness</div>
-            <input id="brightnessRange" type="range" min="1" max="100" value="100" />
-            <span class="slider-value" id="brightnessValue">100%</span>
-          </div>
-          <div class="btn-row" style="margin-top:4px;">
-            <button id="setBrightnessBtn" class="secondary" style="flex:1;">Set brightness</button>
-            <button id="refreshStateBtn" class="secondary">Refresh</button>
-          </div>
+        <div class="color-row">
+          <div class="slider-label">Color</div>
+          <input id="colorPicker" type="color" value="#ffffff" />
+          <button id="setColorBtn" class="secondary" style="flex: 1;">
+            Set color
+          </button>
+        </div>
 
-          <div class="color-row">
-            <div class="slider-label">Color</div>
-            <input id="colorPicker" type="color" value="#ffffff" />
-            <button id="setColorBtn" class="secondary" style="flex:1;">Set color</button>
-          </div>
-
-          <div class="scene-row">
-            <select id="sceneSelect">
-              <option value="">No scenes loaded</option>
-            </select>
-            <button id="loadScenesBtn" class="secondary">Scenes</button>
-            <button id="applySceneBtn" class="secondary">Apply</button>
+        <div style="margin-top: 8px;">
+          <label for="sceneSelect">Dynamic scene (API)</label>
+          <select id="sceneSelect">
+            <option value="">No scenes loaded</option>
+          </select>
+          <div class="btn-row">
+            <button id="loadScenesBtn" class="secondary" style="flex: 1;">
+              Load scenes
+            </button>
+            <button id="applySceneBtn" class="secondary" style="flex: 1;">
+              Apply scene
+            </button>
           </div>
         </div>
       </div>
 
       <div class="footer">
         <span id="statusText">Idle.</span>
+        <span>OpenAPI v1</span>
       </div>
     </div>
   </div>
 
   <script>
-    const API_BASE = "https://openapi.api.govee.com/router/api/v1";
-    const ENDPOINTS = {
-      devices: API_BASE + "/user/devices",
-      control: API_BASE + "/device/control",
-      state: API_BASE + "/device/state",
-      scenes: API_BASE + "/device/scenes"
-    };
-
-    const STORAGE_KEYS = {
-      apiKey: "goveeApiKey",
-      selectedGroup: "goveeSelectedGroup",
-      devicesSnapshot: "goveeDevicesSnapshot"  // shared with full widget if present
-    };
+    const BASE_URL = "https://openapi.api.govee.com";
+    const DEVICES_URL = BASE_URL + "/router/api/v1/user/devices";
+    const CONTROL_URL = BASE_URL + "/router/api/v1/device/control";
+    const STATE_URL = BASE_URL + "/router/api/v1/device/state";
+    const SCENES_URL = BASE_URL + "/router/api/v1/device/scenes";
 
     const apiKeyInput = document.getElementById("apiKeyInput");
     const saveKeyBtn = document.getElementById("saveKeyBtn");
-    const reloadGroupsBtn = document.getElementById("reloadGroupsBtn");
     const clearConfigBtn = document.getElementById("clearConfigBtn");
-    const groupsContainer = document.getElementById("groupsContainer");
-    const groupsSummary = document.getElementById("groupsSummary");
-    const activeGroupLabel = document.getElementById("activeGroupLabel");
-    const capSummary = document.getElementById("capSummary");
-    const statusText = document.getElementById("statusText");
+    const loadDevicesBtn = document.getElementById("loadDevicesBtn");
+
+    const targetSelect = document.getElementById("targetSelect");
+
+    const onBtn = document.getElementById("onBtn");
+    const offBtn = document.getElementById("offBtn");
+    const refreshBtn = document.getElementById("refreshBtn");
 
     const brightnessRange = document.getElementById("brightnessRange");
     const brightnessValue = document.getElementById("brightnessValue");
     const setBrightnessBtn = document.getElementById("setBrightnessBtn");
-    const refreshStateBtn = document.getElementById("refreshStateBtn");
+
     const colorPicker = document.getElementById("colorPicker");
     const setColorBtn = document.getElementById("setColorBtn");
+
     const sceneSelect = document.getElementById("sceneSelect");
     const loadScenesBtn = document.getElementById("loadScenesBtn");
     const applySceneBtn = document.getElementById("applySceneBtn");
 
-    let groupsCache = {};  // key: "device|sku" -> device obj
-    let scenesCache = {};  // key: "device|sku" -> [{name,value}]
-    let activeGroupKey = "";
+    const statusText = document.getElementById("statusText");
+
+    // Cache of device capabilities keyed by "device|sku"
+    const DEVICE_CAPS_INDEX = new Map();
 
     function setStatus(message, isError) {
       statusText.textContent = message;
-      statusText.style.color = isError ? "#f97373" : "#9ca3af";
-      statusText.style.borderColor = isError
-        ? "rgba(248,113,113,0.9)"
-        : "rgba(55,65,81,0.9)";
-    }
-
-    function uuidFallback() {
-      if (window.crypto && window.crypto.randomUUID) {
-        return window.crypto.randomUUID();
+      if (isError) {
+        statusText.style.color = "#f97373";
+        statusText.style.borderColor = "rgba(248,113,113,0.9)";
+      } else {
+        statusText.style.color = "#9ca3af";
+        statusText.style.borderColor = "rgba(55,65,81,0.9)";
       }
-      return String(Date.now()) + "-" + Math.floor(Math.random() * 1000000000);
     }
 
     function getApiKey() {
       return apiKeyInput.value.trim();
     }
 
-    function saveApiKeyToStorage() {
-      const key = getApiKey();
-      if (!key) {
-        setStatus("Enter an API key before saving.", true);
-        return;
+    function uuidFallback() {
+      if (window.crypto && window.crypto.randomUUID) {
+        return window.crypto.randomUUID();
       }
+      return String(Date.now()) + "-" + Math.floor(Math.random() * 1e9);
+    }
+
+    function saveApiKeyToStorage() {
       try {
-        localStorage.setItem(STORAGE_KEYS.apiKey, key);
-        setStatus("API key saved.", false);
+        const key = getApiKey();
+        if (key) {
+          localStorage.setItem("goveeApiKey", key);
+          setStatus("API key saved. Loading devices…", false);
+          loadDevices();
+        } else {
+          setStatus("Enter an API key before saving.", true);
+        }
       } catch (e) {
         setStatus("Cannot save API key: " + e.message, true);
       }
@@ -533,275 +492,158 @@
 
     function loadApiKeyFromStorage() {
       try {
-        const key = localStorage.getItem(STORAGE_KEYS.apiKey);
+        const key = localStorage.getItem("goveeApiKey");
         if (key) {
           apiKeyInput.value = key;
-          setStatus("API key loaded from local storage.", false);
-        } else {
-          setStatus("Idle.", false);
+          setStatus("API key loaded. Loading devices…", false);
+          loadDevices();
         }
-      } catch (e) {
-        setStatus("Idle.", false);
+      } catch {
+        /* ignore */
       }
     }
 
     function clearConfig() {
       try {
-        localStorage.removeItem(STORAGE_KEYS.apiKey);
-        localStorage.removeItem(STORAGE_KEYS.selectedGroup);
-      } catch (e) {
-        // ignore
+        localStorage.removeItem("goveeApiKey");
+      } catch {
+        /* ignore */
       }
       apiKeyInput.value = "";
-      groupsCache = {};
-      scenesCache = {};
-      activeGroupKey = "";
-      groupsContainer.innerHTML =
-        '<div style="font-size:0.75rem;color:var(--text-muted);">Config cleared. Save API key, then reload groups.</div>';
-      groupsSummary.textContent = "No groups loaded";
-      activeGroupLabel.textContent = "No active group";
-      capSummary.textContent = "–";
+      targetSelect.innerHTML =
+        '<option value="">No devices loaded</option>';
+      DEVICE_CAPS_INDEX.clear();
+      sceneSelect.innerHTML =
+        '<option value="">No scenes loaded</option>';
       setStatus("Config cleared.", false);
+      updateTargetUi(null);
     }
 
-    function groupKey(dev) {
-      return dev.device + "|" + dev.sku;
-    }
+    function classifyDevice(device) {
+      const caps = device.capabilities || [];
+      const key = device.device + "|" + device.sku;
+      const supports = {
+        hasPower: false,
+        hasBrightness: false,
+        hasColor: false,
+        hasScenes: false
+      };
 
-    function getActiveGroup() {
-      if (!activeGroupKey) return null;
-      return groupsCache[activeGroupKey] || null;
-    }
-
-    function persistActiveGroup() {
-      if (!activeGroupKey) return;
-      try {
-        localStorage.setItem(STORAGE_KEYS.selectedGroup, activeGroupKey);
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    function restoreActiveGroup() {
-      try {
-        const key = localStorage.getItem(STORAGE_KEYS.selectedGroup);
-        if (key && groupsCache[key]) {
-          setActiveGroup(key);
+      caps.forEach((c) => {
+        if (
+          c.type === "devices.capabilities.on_off" &&
+          c.instance === "powerSwitch"
+        ) {
+          supports.hasPower = true;
         }
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    function describeCapabilities(dev) {
-      if (!dev || !Array.isArray(dev.capabilities)) return "Capabilities unknown";
-      const caps = dev.capabilities;
-      const names = [];
-
-      if (caps.some(c => c.type === "devices.capabilities.on_off")) {
-        names.push("power");
-      }
-      if (caps.some(c =>
-        c.type === "devices.capabilities.range" &&
-        c.instance === "brightness"
-      )) {
-        names.push("brightness");
-      }
-      if (caps.some(c =>
-        c.type === "devices.capabilities.color_setting" &&
-        c.instance === "colorRgb"
-      )) {
-        names.push("color");
-      }
-      if (caps.some(c =>
-        c.type === "devices.capabilities.dynamic_scene" &&
-        c.instance === "lightScene"
-      )) {
-        names.push("scenes");
-      }
-
-      return names.length ? names.join(" · ") : "Capabilities unknown";
-    }
-
-    function getRangeInfo(dev, instanceName) {
-      if (!dev || !Array.isArray(dev.capabilities)) return null;
-      for (let i = 0; i < dev.capabilities.length; i++) {
-        const c = dev.capabilities[i];
         if (
           c.type === "devices.capabilities.range" &&
-          c.instance === instanceName &&
-          c.parameters &&
-          c.parameters.range
+          c.instance === "brightness"
         ) {
-          return c.parameters.range;
+          supports.hasBrightness = true;
         }
-      }
-      return null;
-    }
-
-    function hasCapability(dev, type, instance) {
-      if (!dev || !Array.isArray(dev.capabilities)) return false;
-      return dev.capabilities.some(c => c.type === type && c.instance === instance);
-    }
-
-    function applyActiveGroupGating() {
-      const dev = getActiveGroup();
-      if (!dev) {
-        brightnessRange.disabled = true;
-        setBrightnessBtn.disabled = true;
-        colorPicker.disabled = true;
-        setColorBtn.disabled = true;
-        sceneSelect.disabled = true;
-        loadScenesBtn.disabled = true;
-        applySceneBtn.disabled = true;
-        refreshStateBtn.disabled = true;
-        capSummary.textContent = "–";
-        return;
-      }
-
-      capSummary.textContent = describeCapabilities(dev);
-
-      const brightRange = getRangeInfo(dev, "brightness");
-      if (brightRange) {
-        brightnessRange.min = String(brightRange.min || 1);
-        brightnessRange.max = String(brightRange.max || 100);
-        brightnessRange.disabled = false;
-        setBrightnessBtn.disabled = false;
-      } else {
-        brightnessRange.disabled = true;
-        setBrightnessBtn.disabled = true;
-      }
-
-      const hasColor = hasCapability(
-        dev,
-        "devices.capabilities.color_setting",
-        "colorRgb"
-      );
-      colorPicker.disabled = !hasColor;
-      setColorBtn.disabled = !hasColor;
-
-      const hasScene = hasCapability(
-        dev,
-        "devices.capabilities.dynamic_scene",
-        "lightScene"
-      );
-      sceneSelect.disabled = !hasScene;
-      loadScenesBtn.disabled = !hasScene;
-      applySceneBtn.disabled = !hasScene;
-
-      refreshStateBtn.disabled = false;
-    }
-
-    function renderGroupsList() {
-      const entries = Object.values(groupsCache);
-      if (!entries.length) {
-        groupsContainer.innerHTML =
-          '<div style="font-size:0.75rem;color:var(--text-muted);">No SameModeGroup groups found. Configure groups in Govee Home and reload.</div>';
-        groupsSummary.textContent = "0 groups";
-        activeGroupLabel.textContent = "No active group";
-        applyActiveGroupGating();
-        return;
-      }
-
-      entries.sort((a, b) => {
-        const nameA = (a.deviceName || a.device || "").toLowerCase();
-        const nameB = (b.deviceName || b.device || "").toLowerCase();
-        if (nameA < nameB) return -1;
-        if (nameA > nameB) return 1;
-        return 0;
+        if (
+          c.type === "devices.capabilities.color_setting" &&
+          c.instance === "colorRgb"
+        ) {
+          supports.hasColor = true;
+        }
+        if (c.type === "devices.capabilities.dynamic_scene") {
+          supports.hasScenes = true;
+        }
       });
 
-      groupsContainer.innerHTML = "";
-      entries.forEach(dev => {
-        const key = groupKey(dev);
-        const row = document.createElement("div");
-        row.className = "group-row";
-        row.dataset.key = key;
+      DEVICE_CAPS_INDEX.set(key, supports);
 
-        const name = document.createElement("div");
-        name.className = "group-name";
-        name.textContent = dev.deviceName || dev.device || "Unnamed group";
+      // Heuristic: groups are SameModeGroup or things that only expose on/off
+      const isGroup =
+        device.sku === "SameModeGroup" ||
+        (!supports.hasBrightness &&
+          !supports.hasColor &&
+          !supports.hasScenes &&
+          supports.hasPower);
 
-        const btnOn = document.createElement("button");
-        btnOn.textContent = "On";
-        btnOn.className = "primary";
-        btnOn.addEventListener("click", function (e) {
-          e.stopPropagation();
-          sendControlToDevice(dev, {
-            type: "devices.capabilities.on_off",
-            instance: "powerSwitch",
-            value: 1
-          });
-        });
-
-        const btnOff = document.createElement("button");
-        btnOff.textContent = "Off";
-        btnOff.className = "secondary";
-        btnOff.addEventListener("click", function (e) {
-          e.stopPropagation();
-          sendControlToDevice(dev, {
-            type: "devices.capabilities.on_off",
-            instance: "powerSwitch",
-            value: 0
-          });
-        });
-
-        row.appendChild(name);
-        row.appendChild(btnOn);
-        row.appendChild(btnOff);
-
-        row.addEventListener("click", function () {
-          setActiveGroup(key);
-        });
-
-        groupsContainer.appendChild(row);
-      });
-
-      groupsSummary.textContent = entries.length + " group" + (entries.length === 1 ? "" : "s");
-
-      if (!activeGroupKey && entries[0]) {
-        setActiveGroup(groupKey(entries[0]));
-      } else {
-        highlightActiveRow();
-        applyActiveGroupGating();
-      }
+      return { key, supports, isGroup };
     }
 
-    function highlightActiveRow() {
-      const rows = groupsContainer.querySelectorAll(".group-row");
-      rows.forEach(r => {
-        if (r.dataset.key === activeGroupKey) {
-          r.classList.add("active");
+    function populateTargetSelect(devices) {
+      targetSelect.innerHTML = "";
+
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Select device or group…";
+      targetSelect.appendChild(placeholder);
+
+      const lights = [];
+      const groups = [];
+
+      devices.forEach((d) => {
+        const info = classifyDevice(d);
+        const base = {
+          device: d.device,
+          sku: d.sku,
+          name: d.deviceName || d.device || d.sku || "Unnamed",
+          isGroup: info.isGroup
+        };
+        if (info.isGroup) {
+          groups.push(base);
         } else {
-          r.classList.remove("active");
+          lights.push(base);
         }
       });
+
+      if (groups.length) {
+        const og = document.createElement("optgroup");
+        og.label = "Groups";
+        groups.forEach((g) => {
+          const opt = document.createElement("option");
+          opt.value = JSON.stringify({
+            device: g.device,
+            sku: g.sku,
+            kind: "group"
+          });
+          opt.textContent = "⬗ " + g.name;
+          og.appendChild(opt);
+        });
+        targetSelect.appendChild(og);
+      }
+
+      if (lights.length) {
+        const og = document.createElement("optgroup");
+        og.label = "Lights";
+        lights.forEach((l) => {
+          const opt = document.createElement("option");
+          opt.value = JSON.stringify({
+            device: l.device,
+            sku: l.sku,
+            kind: "light"
+          });
+          opt.textContent = "◦ " + l.name;
+          og.appendChild(opt);
+        });
+        targetSelect.appendChild(og);
+      }
+
+      if (!groups.length && !lights.length) {
+        targetSelect.innerHTML =
+          '<option value="">No devices returned</option>';
+      }
     }
 
-    function setActiveGroup(key) {
-      if (!groupsCache[key]) return;
-      activeGroupKey = key;
-      const dev = getActiveGroup();
-      activeGroupLabel.textContent =
-        "Active: " + (dev.deviceName || dev.device || key);
-      highlightActiveRow();
-      applyActiveGroupGating();
-      persistActiveGroup();
-    }
-
-    async function loadGroups() {
+    async function loadDevices() {
       const apiKey = getApiKey();
       if (!apiKey) {
         setStatus("Enter your Govee API key first.", true);
         return;
       }
 
-      setStatus("Loading groups…", false);
-      groupsContainer.innerHTML =
-        '<div style="font-size:0.75rem;color:var(--text-muted);">Loading…</div>';
+      setStatus("Loading devices…", false);
+      targetSelect.innerHTML =
+        '<option value="">Loading…</option>';
+      DEVICE_CAPS_INDEX.clear();
 
       try {
-        const res = await fetch(ENDPOINTS.devices, {
+        const res = await fetch(DEVICES_URL, {
           method: "GET",
           headers: {
             "Govee-API-Key": apiKey
@@ -814,52 +656,102 @@
         }
 
         const data = await res.json();
-
-        if (typeof data.code === "number" && data.code !== 200) {
-          const msg = data.msg || data.message || "Unknown error";
-          throw new Error("API error code " + data.code + ": " + msg);
+        if (data.code !== 200) {
+          throw new Error(
+            "API error code " + data.code + ": " + (data.msg || data.message || "unknown")
+          );
         }
 
-        let devices = [];
-        if (Array.isArray(data.data)) {
-          devices = data.data;
-        } else if (data.data && Array.isArray(data.data.devices)) {
-          devices = data.data.devices;
-        } else if (Array.isArray(data.payload)) {
-          devices = data.payload;
-        } else if (data.payload && Array.isArray(data.payload.devices)) {
-          devices = data.payload.devices;
+        const devices = Array.isArray(data.data) ? data.data : [];
+        if (!devices.length) {
+          targetSelect.innerHTML =
+            '<option value="">No devices found.</option>';
+          setStatus("No devices returned from API.", true);
+          return;
         }
 
-        const groups = devices.filter(d => d.sku === "SameModeGroup");
-
-        groupsCache = {};
-        groups.forEach(g => {
-          groupsCache[groupKey(g)] = g;
-        });
-
-        renderGroupsList();
-        setStatus("Groups loaded (" + groups.length + ").", false);
+        populateTargetSelect(devices);
+        setStatus("Devices loaded (" + devices.length + ").", false);
+        updateTargetUi(null);
       } catch (e) {
         console.error(e);
-        groupsContainer.innerHTML =
-          '<div style="font-size:0.75rem;color:var(--text-muted);">Error loading groups.</div>';
-        groupsSummary.textContent = "Load error";
-        setStatus("Group load failed: " + e.message, true);
+        targetSelect.innerHTML =
+          '<option value="">Error loading devices</option>';
+        setStatus("Device load failed: " + e.message, true);
+        DEVICE_CAPS_INDEX.clear();
+        updateTargetUi(null);
       }
     }
 
-    async function sendControlToDevice(dev, capability) {
+    function getSelectedTarget() {
+      const value = targetSelect.value;
+      if (!value) return null;
+      try {
+        const parsed = JSON.parse(value);
+        if (!parsed || !parsed.device || !parsed.sku) return null;
+        return parsed;
+      } catch {
+        return null;
+      }
+    }
+
+    function updateTargetUi(target) {
+      let supports = null;
+      if (target && target.device && target.sku) {
+        const key = target.device + "|" + target.sku;
+        supports = DEVICE_CAPS_INDEX.get(key) || null;
+      }
+
+      const hasBrightness = supports && supports.hasBrightness;
+      const hasColor = supports && supports.hasColor;
+      const hasScenes = supports && supports.hasScenes;
+
+      brightnessRange.disabled = !hasBrightness;
+      setBrightnessBtn.disabled = !hasBrightness;
+      brightnessValue.style.opacity = hasBrightness ? "1" : "0.4";
+
+      colorPicker.disabled = !hasColor;
+      setColorBtn.disabled = !hasColor;
+
+      sceneSelect.disabled = !hasScenes;
+      loadScenesBtn.disabled = !hasScenes;
+      applySceneBtn.disabled = !hasScenes;
+
+      if (!target) {
+        setStatus("Select a device or group.", false);
+        return;
+      }
+
+      if (target.kind === "group") {
+        if (!supports) {
+          setStatus("Group selected. On/Off likely supported.", false);
+        } else if (!hasBrightness && !hasColor && !hasScenes) {
+          setStatus("Group selected. API exposes On/Off only.", false);
+        } else {
+          setStatus("Group selected.", false);
+        }
+      } else {
+        setStatus("Device selected.", false);
+      }
+    }
+
+    async function sendControl(capability) {
       const apiKey = getApiKey();
       if (!apiKey) {
         setStatus("Enter your Govee API key first.", true);
         return;
       }
 
+      const sel = getSelectedTarget();
+      if (!sel) {
+        setStatus("Select a device or group first.", true);
+        return;
+      }
+
       setStatus("Sending command…", false);
 
       try {
-        const res = await fetch(ENDPOINTS.control, {
+        const res = await fetch(CONTROL_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -868,9 +760,9 @@
           body: JSON.stringify({
             requestId: uuidFallback(),
             payload: {
-              device: dev.device,
-              sku: dev.sku,
-              capability: capability
+              device: sel.device,
+              sku: sel.sku,
+              capability
             }
           })
         });
@@ -881,9 +773,10 @@
         }
 
         const data = await res.json();
-        if (typeof data.code === "number" && data.code !== 200) {
-          const msg = data.msg || data.message || "Unknown error";
-          throw new Error("API error code " + data.code + ": " + msg);
+        if (data.code !== 200) {
+          throw new Error(
+            "API error code " + data.code + ": " + (data.msg || data.message || "unknown")
+          );
         }
 
         setStatus("Command sent successfully.", false);
@@ -893,22 +786,23 @@
       }
     }
 
-    async function refreshStateForActiveGroup() {
+    async function refreshState() {
       const apiKey = getApiKey();
       if (!apiKey) {
         setStatus("Enter your Govee API key first.", true);
         return;
       }
-      const dev = getActiveGroup();
-      if (!dev) {
-        setStatus("Select an active group first.", true);
+
+      const sel = getSelectedTarget();
+      if (!sel) {
+        setStatus("Select a device or group first.", true);
         return;
       }
 
       setStatus("Refreshing state…", false);
 
       try {
-        const res = await fetch(ENDPOINTS.state, {
+        const res = await fetch(STATE_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -917,8 +811,8 @@
           body: JSON.stringify({
             requestId: uuidFallback(),
             payload: {
-              device: dev.device,
-              sku: dev.sku
+              device: sel.device,
+              sku: sel.sku
             }
           })
         });
@@ -929,33 +823,33 @@
         }
 
         const data = await res.json();
-        if (typeof data.status === "number" && data.status !== 200) {
-          const msg = data.msg || data.message || "Unknown error";
-          throw new Error("API status " + data.status + ": " + msg);
+        if (data.code !== 200) {
+          throw new Error(
+            "API error code " + data.code + ": " + (data.msg || data.message || "unknown")
+          );
         }
 
-        const payload = data.payload || {};
-        const caps = Array.isArray(payload.capabilities)
-          ? payload.capabilities
-          : [];
+        const caps = (data.payload && data.payload.capabilities) || [];
 
-        const brightCap = caps.find(c =>
-          c.type === "devices.capabilities.range" &&
-          c.instance === "brightness" &&
-          c.state &&
-          typeof c.state.value === "number"
+        const brightCap = caps.find(
+          (c) =>
+            c.type === "devices.capabilities.range" &&
+            c.instance === "brightness" &&
+            c.state &&
+            typeof c.state.value === "number"
         );
         if (brightCap) {
-          const v = Math.round(brightCap.state.value);
+          const v = Math.max(1, Math.min(100, Math.round(brightCap.state.value)));
           brightnessRange.value = String(v);
           brightnessValue.textContent = v + "%";
         }
 
-        const colorCap = caps.find(c =>
-          c.type === "devices.capabilities.color_setting" &&
-          c.instance === "colorRgb" &&
-          c.state &&
-          typeof c.state.value === "number"
+        const colorCap = caps.find(
+          (c) =>
+            c.type === "devices.capabilities.color_setting" &&
+            c.instance === "colorRgb" &&
+            c.state &&
+            typeof c.state.value === "number"
         );
         if (colorCap) {
           const rgbInt = colorCap.state.value;
@@ -965,53 +859,43 @@
           const hex =
             "#" +
             [r, g, b]
-              .map(x => x.toString(16).padStart(2, "0"))
+              .map((x) => x.toString(16).padStart(2, "0"))
               .join("");
           colorPicker.value = hex;
         }
 
-        const powerCap = caps.find(c =>
-          c.type === "devices.capabilities.on_off" &&
-          c.instance === "powerSwitch" &&
-          c.state &&
-          typeof c.state.value !== "undefined"
-        );
-
-        if (powerCap) {
-          const val = powerCap.state.value ? "On" : "Off";
-          setStatus("State: " + val + " · refreshed.", false);
-        } else {
-          setStatus("State refreshed.", false);
-        }
+        setStatus("State refreshed.", false);
       } catch (e) {
         console.error(e);
         setStatus("State refresh failed: " + e.message, true);
       }
     }
 
-    async function loadScenesForActiveGroup() {
+    async function loadScenes() {
       const apiKey = getApiKey();
       if (!apiKey) {
         setStatus("Enter your Govee API key first.", true);
         return;
       }
-      const dev = getActiveGroup();
-      if (!dev) {
-        setStatus("Select an active group first.", true);
+
+      const sel = getSelectedTarget();
+      if (!sel) {
+        setStatus("Select a device first.", true);
         return;
       }
 
-      const key = groupKey(dev);
-      if (scenesCache[key] && scenesCache[key].length) {
-        populateSceneSelect(scenesCache[key]);
-        setStatus("Scenes loaded from cache.", false);
+      const caps = DEVICE_CAPS_INDEX.get(sel.device + "|" + sel.sku);
+      if (!caps || !caps.hasScenes) {
+        setStatus("Selected target does not expose scenes via API.", true);
         return;
       }
 
       setStatus("Loading scenes…", false);
+      sceneSelect.innerHTML =
+        '<option value="">Loading…</option>';
 
       try {
-        const res = await fetch(ENDPOINTS.scenes, {
+        const res = await fetch(SCENES_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1020,8 +904,8 @@
           body: JSON.stringify({
             requestId: uuidFallback(),
             payload: {
-              device: dev.device,
-              sku: dev.sku
+              device: sel.device,
+              sku: sel.sku
             }
           })
         });
@@ -1032,195 +916,137 @@
         }
 
         const data = await res.json();
-        if (typeof data.status === "number" && data.status !== 200) {
-          const msg = data.msg || data.message || "Unknown error";
-          throw new Error("API status " + data.status + ": " + msg);
+        if (data.code !== 200) {
+          throw new Error(
+            "API error code " + data.code + ": " + (data.msg || data.message || "unknown")
+          );
         }
 
-        let caps = [];
-        if (Array.isArray(data.data)) {
-          if (data.data[0] && Array.isArray(data.data[0].capabilities)) {
-            caps = data.data[0].capabilities;
-          }
-        } else if (data.data && Array.isArray(data.data.capabilities)) {
-          caps = data.data.capabilities;
+        const payload = data.payload || {};
+        const capsArr = payload.capabilities || [];
+        const dynCap = capsArr.find(
+          (c) => c.type === "devices.capabilities.dynamic_scene"
+        );
+
+        const options =
+          dynCap &&
+          dynCap.parameters &&
+          Array.isArray(dynCap.parameters.options)
+            ? dynCap.parameters.options
+            : [];
+
+        if (!options.length) {
+          sceneSelect.innerHTML =
+            '<option value="">No scenes available</option>';
+          setStatus("No dynamic scenes reported for this device.", false);
+          return;
         }
 
-        const scenes = [];
-        caps.forEach(c => {
-          if (
-            c.type === "devices.capabilities.dynamic_scene" &&
-            c.instance === "lightScene" &&
-            c.parameters &&
-            Array.isArray(c.parameters.options)
-          ) {
-            c.parameters.options.forEach(opt => {
-              if (typeof opt.value !== "undefined") {
-                scenes.push({
-                  name: opt.name || String(opt.value),
-                  value: opt.value
-                });
-              }
-            });
-          }
+        sceneSelect.innerHTML = "";
+        options.forEach((opt) => {
+          const o = document.createElement("option");
+          o.value = JSON.stringify({
+            instance: dynCap.instance,
+            value: opt.value
+          });
+          o.textContent = opt.name || "Scene " + String(opt.value);
+          sceneSelect.appendChild(o);
         });
 
-        scenesCache[key] = scenes;
-        populateSceneSelect(scenes);
-
-        if (!scenes.length) {
-          setStatus("No scenes reported for this group.", true);
-        } else {
-          setStatus("Scenes loaded (" + scenes.length + ").", false);
-        }
+        setStatus("Scenes loaded.", false);
       } catch (e) {
         console.error(e);
-        populateSceneSelect([]);
+        sceneSelect.innerHTML =
+          '<option value="">Error loading scenes</option>';
         setStatus("Scene load failed: " + e.message, true);
       }
     }
 
-    function populateSceneSelect(scenes) {
-      if (!scenes || !scenes.length) {
-        sceneSelect.innerHTML = '<option value="">No scenes available</option>';
+    function applyScene() {
+      const raw = sceneSelect.value;
+      if (!raw) {
+        setStatus("Select a scene first.", true);
         return;
       }
-      sceneSelect.innerHTML = "";
-      const placeholder = document.createElement("option");
-      placeholder.value = "";
-      placeholder.textContent = "Select scene…";
-      sceneSelect.appendChild(placeholder);
-
-      scenes.forEach(s => {
-        const opt = document.createElement("option");
-        opt.value = String(s.value);
-        opt.textContent = s.name + " (" + s.value + ")";
-        sceneSelect.appendChild(opt);
+      let conf;
+      try {
+        conf = JSON.parse(raw);
+      } catch {
+        setStatus("Invalid scene selection.", true);
+        return;
+      }
+      sendControl({
+        type: "devices.capabilities.dynamic_scene",
+        instance: conf.instance,
+        value: conf.value
       });
     }
 
-    function hexToRgbInt(hex) {
-      if (!hex) return 0;
-      if (hex.charAt(0) === "#") {
-        hex = hex.slice(1);
-      }
-      if (hex.length === 3) {
-        hex =
-          hex.charAt(0) +
-          hex.charAt(0) +
-          hex.charAt(1) +
-          hex.charAt(1) +
-          hex.charAt(2) +
-          hex.charAt(2);
-      }
-      const n = parseInt(hex, 16);
-      if (isNaN(n)) return 0;
-      return n;
-    }
-
-    brightnessRange.addEventListener("input", function () {
+    // Event wiring
+    brightnessRange.addEventListener("input", () => {
       brightnessValue.textContent = brightnessRange.value + "%";
     });
 
     saveKeyBtn.addEventListener("click", saveApiKeyToStorage);
     clearConfigBtn.addEventListener("click", clearConfig);
-    reloadGroupsBtn.addEventListener("click", loadGroups);
+    loadDevicesBtn.addEventListener("click", loadDevices);
 
-    refreshStateBtn.addEventListener("click", refreshStateForActiveGroup);
+    targetSelect.addEventListener("change", () => {
+      const sel = getSelectedTarget();
+      updateTargetUi(sel);
+      // Clear scenes list when switching targets
+      sceneSelect.innerHTML =
+        '<option value="">No scenes loaded</option>';
+    });
 
-    setBrightnessBtn.addEventListener("click", function () {
-      const dev = getActiveGroup();
-      if (!dev) {
-        setStatus("Select an active group first.", true);
-        return;
-      }
-      const rangeInfo = getRangeInfo(dev, "brightness");
-      let val = parseInt(brightnessRange.value, 10) || 1;
-      if (rangeInfo) {
-        const min = typeof rangeInfo.min === "number" ? rangeInfo.min : 1;
-        const max = typeof rangeInfo.max === "number" ? rangeInfo.max : 100;
-        val = Math.max(min, Math.min(max, val));
-      } else {
-        val = Math.max(1, Math.min(100, val));
-      }
-      sendControlToDevice(dev, {
+    onBtn.addEventListener("click", () =>
+      sendControl({
+        type: "devices.capabilities.on_off",
+        instance: "powerSwitch",
+        value: 1
+      })
+    );
+
+    offBtn.addEventListener("click", () =>
+      sendControl({
+        type: "devices.capabilities.on_off",
+        instance: "powerSwitch",
+        value: 0
+      })
+    );
+
+    setBrightnessBtn.addEventListener("click", () => {
+      const val = Math.max(
+        1,
+        Math.min(100, parseInt(brightnessRange.value, 10) || 1)
+      );
+      sendControl({
         type: "devices.capabilities.range",
         instance: "brightness",
         value: val
       });
     });
 
-    setColorBtn.addEventListener("click", function () {
-      const dev = getActiveGroup();
-      if (!dev) {
-        setStatus("Select an active group first.", true);
-        return;
-      }
-      if (!hasCapability(dev, "devices.capabilities.color_setting", "colorRgb")) {
-        setStatus("Active group does not support colorRgb.", true);
-        return;
-      }
+    setColorBtn.addEventListener("click", () => {
       const hex = colorPicker.value || "#ffffff";
-      const rgbInt = hexToRgbInt(hex);
-      sendControlToDevice(dev, {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      const rgbInt = (r << 16) + (g << 8) + b;
+      sendControl({
         type: "devices.capabilities.color_setting",
         instance: "colorRgb",
         value: rgbInt
       });
     });
 
-    loadScenesBtn.addEventListener("click", loadScenesForActiveGroup);
+    refreshBtn.addEventListener("click", refreshState);
+    loadScenesBtn.addEventListener("click", loadScenes);
+    applySceneBtn.addEventListener("click", applyScene);
 
-    applySceneBtn.addEventListener("click", function () {
-      const dev = getActiveGroup();
-      if (!dev) {
-        setStatus("Select an active group first.", true);
-        return;
-      }
-      const valRaw = sceneSelect.value;
-      if (!valRaw) {
-        setStatus("Select a scene first.", true);
-        return;
-      }
-      let val;
-      if (/^-?\d+$/.test(valRaw)) {
-        val = parseInt(valRaw, 10);
-      } else {
-        val = valRaw;
-      }
-      sendControlToDevice(dev, {
-        type: "devices.capabilities.dynamic_scene",
-        instance: "lightScene",
-        value: val
-      });
-    });
-
-    (function init() {
-      loadApiKeyFromStorage();
-
-      try {
-        const snapshotRaw = localStorage.getItem(STORAGE_KEYS.devicesSnapshot);
-        if (snapshotRaw) {
-          const snapshot = JSON.parse(snapshotRaw);
-          if (Array.isArray(snapshot) && snapshot.length) {
-            const groups = snapshot.filter(d => d.sku === "SameModeGroup");
-            groupsCache = {};
-            groups.forEach(g => {
-              groupsCache[groupKey(g)] = g;
-            });
-            renderGroupsList();
-            restoreActiveGroup();
-            applyActiveGroupGating();
-            setStatus("Groups loaded from cache. Use Reload groups to refresh.", false);
-            return;
-          }
-        }
-      } catch (e) {
-        // ignore
-      }
-
-      applyActiveGroupGating();
-    })();
+    // Init
+    loadApiKeyFromStorage();
+    updateTargetUi(null);
   </script>
 </body>
 </html>
